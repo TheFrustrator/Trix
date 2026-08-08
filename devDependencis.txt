@@ -1,0 +1,12 @@
+/*Backend:*/ 
+express
+cors
+jsonwebtoken
+bcrypt
+body-parser
+dotenv
+mongoose
+joi
+cors
+nodemailer
+coockie-parser
