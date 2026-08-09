@@ -17,7 +17,6 @@ const DoctorDashboard = () => {
   const [requestDetails, setRequestDetails] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Dynamic state for recent patients
   const [recentPatients, setRecentPatients] = useState([]);
   const [fetchingPatients, setFetchingPatients] = useState(true);
 
@@ -29,12 +28,10 @@ const DoctorDashboard = () => {
     DoctorNavlinkItems.find((r) => r.route === location.pathname) ||
     DoctorNavlinkItems[0];
 
-  // Helper to get standardized base API URL
   const getBaseUrl = useCallback(() => {
     return backendUrl?.endsWith("/") ? backendUrl.slice(0, -1) : backendUrl;
   }, [backendUrl]);
 
-  // SMART NAVIGATION HANDLER: Redirects to active session if active, else navigates standard routes
   const handlePageChange = async (navItem) => {
     const isActivePatientRoute =
       navItem.route === "/active-patient" ||
@@ -48,7 +45,6 @@ const DoctorDashboard = () => {
         );
 
         if (data.success && data.hasActiveSession && data.patientCustomId) {
-          // Route directly to active patient workspace
           navigate(`/doctor/active-patient/${data.patientCustomId}/summary`);
         } else {
           toast.warning("No active session found. Please request access first.");
@@ -64,7 +60,7 @@ const DoctorDashboard = () => {
     }
   };
 
-  // Fetch up to 6 recent patients from backend
+  // Fetch up to 6 recent patients
   const fetchRecentPatients = useCallback(async () => {
     try {
       axios.defaults.withCredentials = true;
@@ -89,45 +85,60 @@ const DoctorDashboard = () => {
     }
   }, [fetchRecentPatients, checkActiveSession]);
 
-  // Submit Handler for Access Request
-  const handleRequestAccess = async (e) => {
-    e.preventDefault();
-
-    if (!searchQuery.trim()) {
-      return toast.error("Please enter a valid Patient ID");
+  // Unified Request Access Handler (Used by Form and Card Clicks)
+  const executeAccessRequest = async (targetPatientId) => {
+    if (!targetPatientId || !targetPatientId.trim()) {
+      return toast.error("Please enter or select a valid Patient ID");
     }
+
+    const patientIdToRequest = targetPatientId.trim();
 
     try {
       setLoading(true);
       axios.defaults.withCredentials = true;
 
+      // 1. Check if an active session already exists for this patient
+      const sessionRes = await axios.get(
+        `${getBaseUrl()}/api/doctor/active-session/${patientIdToRequest}`
+      );
+
+      if (sessionRes.data?.success && sessionRes.data?.expiresAt) {
+        // Session is already active! Direct navigate without showing access modal
+        toast.success("Active session found! Opening patient file...");
+        navigate(`/doctor/active-patient/${patientIdToRequest}/summary`);
+        return;
+      }
+
+      // 2. If no active session, post access request
       const { data } = await axios.post(
         `${getBaseUrl()}/api/doctor/request-access`,
-        {
-          patientCustomId: searchQuery.trim(),
-        }
+        { patientCustomId: patientIdToRequest }
       );
 
       if (data.success) {
         setRequestDetails(data);
         setIsModalOpen(true);
       } else {
-        toast.error(data.message || "Failed to send request");
+        toast.error(data.message || "Failed to send access request");
       }
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
-        "Failed to submit access request";
+        "Failed to request access";
       toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    executeAccessRequest(searchQuery);
+  };
+
   return (
     <div className="h-full w-full flex flex-row min-h-screen bg-slate-50/50">
-      {/* Sidebar Navigation */}
       <aside className="w-64 flex-shrink-0 bg-white shadow-xs">
         <NavlinkComponent
           currentDashboardRole={currentDashboardRole}
@@ -136,16 +147,14 @@ const DoctorDashboard = () => {
         />
       </aside>
 
-      {/* Main Dashboard Content Area */}
       <div className="flex-1 w-full flex flex-col p-6 gap-6 overflow-x-hidden">
-        {/* Header */}
         <div className="w-full flex justify-end">
           <DoctorHeader headerIcon={DoctorIcon.FDoctorIcon} />
         </div>
 
-        {/* Search & Request Access Form */}
+        {/* Search Bar Form */}
         <form
-          onSubmit={handleRequestAccess}
+          onSubmit={handleFormSubmit}
           className="flex flex-row w-full justify-center items-center gap-3 mt-4"
         >
           <div className="flex flex-row flex-1 max-w-[800px] justify-between items-center border border-gray-300 shadow-xs hover:shadow-md transition-shadow rounded-xl px-4 py-1 bg-white">
@@ -197,6 +206,7 @@ const DoctorDashboard = () => {
                   patientId={patient.patientCustomId}
                   lastVisitdate={patient.lastVisitDate}
                   disease={patient.disease}
+                  onRequestAccess={executeAccessRequest}
                 />
               ))}
             </div>
@@ -204,12 +214,12 @@ const DoctorDashboard = () => {
         </div>
       </div>
 
-      {/* Access Request Popup Modal */}
+      {/* Access Request Status Popup Modal */}
       <RequestAccessModal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
-          fetchRecentPatients(); // Refresh recent list on modal close
+          fetchRecentPatients();
         }}
         requestDetails={requestDetails}
         backendUrl={backendUrl}
