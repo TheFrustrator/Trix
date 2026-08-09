@@ -3,12 +3,19 @@ import UserLoginHeader from "./../cards/UserLoginHeader";
 import UserSighUpHeader from "../cards/userSighUpHeader";
 import { Icons } from "../assets/assets";
 import HandleUploadCard from "../cards/handleUploadCard";
+import { toast } from "react-toastify";
+import axios from "axios";
+import { useContext } from "react";
+import { AppContext } from "../context/AppContext";
+import { useNavigate } from "react-router-dom";
 
 const DoctorSignUp = () => {
+  const navigate = useNavigate();
+  const { backendUrl, setIsLOggedin, getDoctorData } = useContext(AppContext);
   const [isSlidebarOpen, setIsSlidebarOpen] = useState();
 
-  const [fullName, setFullName] = useState("");
- 
+  const [name, setName] = useState("");
+
   const [email, setEmail] = useState("");
 
   const [password, setPassword] = useState("");
@@ -49,6 +56,51 @@ const DoctorSignUp = () => {
 
   const onSubmitHandler = async (event) => {
     event.preventDefault();
+
+    if (password !== confirmPassword) {
+      return toast.error("Passwords do not match!");
+    }
+
+    try {
+      axios.defaults.withCredentials = true;
+
+      // Step 1: Register user and set HTTP-only cookie
+      const { data: regData } = await axios.post(
+        `${backendUrl}/api/auth/doctor-signup`,
+        {
+          name,
+          email,
+          phoneNumber,
+          password,
+          ClinicAdd,
+          Specialization,
+          uploadLicense,
+        },
+      );
+
+      if (!regData.success) {
+        return toast.error(regData.message || "Registration failed");
+      }
+
+      // Step 2: Request verification OTP (cookie will automatically authenticate req.userId)
+      const { data: otpData } = await axios.post(
+        `${backendUrl}/api/auth/send-verify-otp`,
+      );
+
+      if (otpData.success) {
+        toast.success("Account created! OTP sent to your email.");
+        navigate("/email-verify");
+      } else {
+        toast.error(otpData.message);
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Something went wrong. Please try again.";
+
+      toast.error(errorMessage);
+    }
   };
 
   return (
@@ -60,8 +112,11 @@ const DoctorSignUp = () => {
       />
 
       {/* left side image and the form compone */}
-      <div></div>
-      <form className="min-h-[80vh] flex items-center">
+
+      <form
+        onSubmit={onSubmitHandler}
+        className="min-h-[80vh] flex items-center"
+      >
         <div className="flex flex-col gap-3 m-auto items-center p-8 min-w-[340px] sm:min-w-96 border rounded-xl text-primary text-sm shadow-lg">
           <p className="text-3xl font-semibold mb-5">Create Doctor account</p>
           <div className="flex flex-row items-center justify-center gap-2">
@@ -80,20 +135,19 @@ const DoctorSignUp = () => {
                 <input
                   type="text"
                   placeholder="Jhon Doe"
-                  onChange={(e) => setFullName(e.target.email)}
-                  value={fullName}
+                  onChange={(e) => setName(e.target.value)}
+                  value={name}
                   className="border border-blue-100 w-full rounded-lg p-2 mt-1"
                 />
               </div>
-              
               {/* Email Section  */}
               <div className="w-full my-1">
                 <p>Email</p>
                 <input
                   type="email"
                   placeholder="dummy@gmail.com"
-                  onChange={(e) => setEmail(e.target.email)}
                   value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="border border-blue-100 w-full rounded-lg p-2 mt-1"
                 />
               </div>
@@ -104,8 +158,8 @@ const DoctorSignUp = () => {
                   type="tel"
                   maxLength={10}
                   placeholder="8945069083"
-                  onChange={(e) => setPhoneNumber(e.target.email)}
                   value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
                   className="border border-blue-100 w-full rounded-lg p-2 mt-1"
                 />
               </div>
@@ -117,8 +171,8 @@ const DoctorSignUp = () => {
                   <input
                     type="password"
                     placeholder="*********"
-                    onChange={(e) => setPassword(e.target.password)}
                     value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="border border-blue-100 w-full rounded-lg p-2 mt-1"
                   />
                 </div>
@@ -128,8 +182,8 @@ const DoctorSignUp = () => {
                   <input
                     type="password"
                     placeholder="*********"
-                    onChange={(e) => setConfirmPassword(e.target.password)}
                     value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     className="border border-blue-100 w-full rounded-lg p-2 mt-1"
                   />
                 </div>
@@ -140,8 +194,8 @@ const DoctorSignUp = () => {
                 <input
                   type="text"
                   placeholder="N248, kolkata-7000090"
-                  onChange={(e) => setClinicAdd(e.target.email)}
                   value={ClinicAdd}
+                  onChange={(e) => setClinicAdd(e.target.value)}
                   className="border border-blue-100 w-full rounded-lg p-2 mt-1"
                 />
               </div>
@@ -150,8 +204,8 @@ const DoctorSignUp = () => {
                 <input
                   type="text"
                   placeholder="Dynacologist"
-                  onChange={(e) => setSpecialization(e.target.email)}
                   value={Specialization}
+                  onChange={(e) => setSpecialization(e.target.value)}
                   className="border border-blue-100 w-full rounded-lg p-2 mt-1"
                 />
               </div>

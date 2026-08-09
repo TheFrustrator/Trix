@@ -8,6 +8,7 @@ export const AppContextProvider = (props) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const [isLoggedin, setIsLOggedin] = useState(false);
   const [userData, setUserData] = useState(false);
+  const [doctorData, setDoctorData] = useState(false);
 
   // Send cookies with Axios requests
   axios.defaults.withCredentials = true;
@@ -29,6 +30,8 @@ export const AppContextProvider = (props) => {
     }
   }
 
+
+  // user data fetch 
   const getUserData = async () => {
     try {
       // Standardize base URL trailing slashes
@@ -53,6 +56,29 @@ export const AppContextProvider = (props) => {
     }
   };
 
+  const getDoctorData = async () => {
+  try {
+    const baseUrl = backendUrl?.endsWith("/")
+      ? backendUrl.slice(0, -1)
+      : backendUrl;
+
+    // Updated route path to match doctorRouter mounting point
+    const { data } = await axios.get(`${baseUrl}/api/doctor/doctor-data`);
+
+    if (data.success) {
+      setDoctorData(data.userData);
+    } else {
+      toast.error(data.message);
+    }
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "Something went wrong. Please try again.";
+
+    toast.error(errorMessage);
+  }
+};
   // FIX: Fetch authentication/user status on initial application load
   useEffect(() => {
     getUserData();
@@ -65,6 +91,8 @@ export const AppContextProvider = (props) => {
     userData,
     setUserData,
     getUserData,
+    getAuthState,
+    getDoctorData,
   };
 
   return (

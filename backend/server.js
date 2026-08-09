@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import connectDB from "./server/mongodb.js";
 import authRouter from "./routes/authRoute.js";
 import userRouter from "./routes/userRoute.js";
+import doctorRouter from "./routes/doctorRoute.js";
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.get("/", (req, res) => res.send("APi working"));
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
+app.use("/api/doctor", doctorRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on localhost:${PORT}`);
