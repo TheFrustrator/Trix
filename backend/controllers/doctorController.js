@@ -4,11 +4,13 @@ import jwt from "jsonwebtoken";
 import transporter from "../config/nodemailer.js"; // Adjust path to your nodemailer config
 
 export const doctorRegister = async (req, res) => {
-  const { name, email, password, phoneNumber, clinicAdd, Specialization, uploadLicense } = req.body;
+  const { name, email, password, phoneNumber, clinicAdd, Specialization} = req.body;
 
-  if (!name || !email || !password || !phoneNumber || !clinicAdd || !Specialization) {
+  if (!name || !email || !password || !phoneNumber || !clinicAdd ) {
     return res.json({ success: false, message: "Missing Details" });
   }
+
+  const uploadLicense = req.file ? req.file.path : null;
 
   try {
     const existingDoctor = await doctorModel.findOne({ email });

@@ -29,7 +29,7 @@ const doctorSchema = new mongoose.Schema({
   },
   uploadLicense: {
     type: String,
-    required: true,
+    
   },
   docId: {
     type: String,
