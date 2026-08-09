@@ -1,6 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const LoginCard = ({email,password,setEmail,setPassword, onSubmitHandler}) => {
+
+  const navigate = useNavigate()
  
   return (
     <form onSubmit={onSubmitHandler} className="min-h-[80vh] flex items-center">
@@ -16,7 +19,7 @@ const LoginCard = ({email,password,setEmail,setPassword, onSubmitHandler}) => {
             className="border border-blue-100 w-full rounded-lg p-2 mt-1"
           />
         </div>
-        <div className="w-full">
+        <div className="w-full gap-2">
           <p>Password</p>
           <input
             type="password"
@@ -25,11 +28,14 @@ const LoginCard = ({email,password,setEmail,setPassword, onSubmitHandler}) => {
             value={password}
             className="border border-blue-100 w-full rounded-lg p-2 mt-1"
           />
+          <span onClick={() => navigate('/reset-password')} className="text-black hover:underline cursor-pointer text-xs">Forget Password</span>
         </div>
         <button className="bg-border text-white w-full py-2 rounded-md text-base">
           Login
         </button>
+        
       </div>
+      
     </form>
   );
 };

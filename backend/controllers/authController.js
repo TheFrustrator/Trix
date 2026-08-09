@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import userModel from "../models/userModel.js";
 import transporter from "../config/nodemailer.js";
 
+
 export const register = async (req, res) => {
   const { name, email, password, dob, phoneNumber } = req.body;
 
@@ -211,6 +212,9 @@ export const isAuthenticated = async (req, res) => {
 };
 
 // send password reset otp
+
+
+// Send Password Reset OTP
 export const sendResetOtp = async (req, res) => {
   const { email } = req.body;
 
@@ -221,22 +225,23 @@ export const sendResetOtp = async (req, res) => {
   try {
     const user = await userModel.findOne({ email });
     if (!user) {
-      return res.json({ success: false, message: "User not found " });
+      return res.json({ success: false, message: "User not found" });
     }
 
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const rawOtp = String(Math.floor(100000 + Math.random() * 900000));
+    const hashedOtp = await bcrypt.hash(rawOtp, 10);
 
-    user.resetOTP = otp;
-    // Fixed 'date.now()' -> 'Date.now()'
-    user.resetOtpExpireAt = Date.now() + 15 * 60 * 60 * 1000;
+    user.resetOTP = hashedOtp;
+    // Set expiry to 15 minutes
+    user.resetOtpExpireAt = Date.now() + 15 * 60 * 1000;
 
     await user.save();
 
     const mailOption = {
       from: process.env.SENDER_EMAIL,
       to: user.email,
-      subject: "Account Verification OTP",
-      text: `Your reset password OTP is ${otp}. Use the OTP to reset your password. Never share your OTP with anyone.`,
+      subject: "Password Reset OTP",
+      text: `Your reset password OTP is ${rawOtp}. Use this code to reset your password. It will expire in 15 minutes.`,
     };
 
     await transporter.sendMail(mailOption);
@@ -247,28 +252,30 @@ export const sendResetOtp = async (req, res) => {
   }
 };
 
+// Reset Password with OTP Verification
 export const resetPassword = async (req, res) => {
   const { email, otp, newPassword } = req.body;
 
   if (!email || !otp || !newPassword) {
     return res.json({
       success: false,
-      message: "Email, OTP and New Password is required",
+      message: "Email, OTP, and New Password are required",
     });
   }
 
   try {
     const user = await userModel.findOne({ email });
     if (!user) {
-      return res.json({ success: false, message: "User not found " });
+      return res.json({ success: false, message: "User not found" });
     }
 
-    if (user.resetOTP === "" || user.resetOTP !== otp) {
+    if (!user.resetOTP || user.resetOtpExpireAt < Date.now()) {
+      return res.json({ success: false, message: "OTP has expired or is invalid" });
+    }
+
+    const isMatch = await bcrypt.compare(otp, user.resetOTP);
+    if (!isMatch) {
       return res.json({ success: false, message: "Invalid OTP" });
-    }
-
-    if (user.resetOtpExpireAt < Date.now()) {
-      return res.json({ success: false, message: "OTP Expired" });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);

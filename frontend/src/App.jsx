@@ -27,6 +27,7 @@ import ActivePatientPrescription from "./doctor/ActivePatientPrescription";
 import PdfPrescriptionView from "./doctor/PdfPrescriptionView";
 import EmailVerify from './pages/EmailVerify';
 import { ToastContainer, toast } from 'react-toastify';
+import ForgetPassword from "./pages/ForgetPassword";
 
 const App = () => {
   return (
@@ -77,6 +78,7 @@ const App = () => {
         <Route path="/prescription-view" element={<PdfPrescriptionView />} />
        
         <Route path="/email-verify" element={<EmailVerify />}/>
+        <Route path="/reset-password" element={<ForgetPassword />}/>
       </Routes>
     </div>
   );
