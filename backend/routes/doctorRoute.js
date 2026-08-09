@@ -16,6 +16,8 @@ import {
   savePrescription,
   getActiveSessionDetails,
   getActivePatientSummary,
+  getRecentPatients,
+  getCurrentActiveSession,
 } from "../controllers/doctorController.js";
 import doctorAuth from "../middleware/doctorMiddleware.js";
 import upload from "../controllers/multer.js";
@@ -41,6 +43,8 @@ doctorRouter.post("/cancel-access-request", doctorAuth, cancelAccessRequest);
 doctorRouter.get("/check-request-status/:requestId", doctorAuth, checkAccessRequestStatus);
 doctorRouter.get("/active-session/:patientCustomId", doctorAuth, getActiveSessionDetails);
 doctorRouter.get("/patient-summary/:patientCustomId", doctorAuth, getActivePatientSummary);
+doctorRouter.get("/recent-patients", doctorAuth, getRecentPatients);
+doctorRouter.get("/current-active-session", doctorAuth, getCurrentActiveSession);
 
 doctorRouter.post("/save-diagnosis", doctorAuth, upload.single("report"), saveDiagnosis);
 doctorRouter.post("/save-prescription", doctorAuth, savePrescription);

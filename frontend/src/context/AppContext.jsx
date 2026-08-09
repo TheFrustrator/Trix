@@ -1,5 +1,5 @@
 import axios from "axios";
-import { createContext, useEffect, useState } from "react";
+import { createContext, useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 export const AppContext = createContext();
@@ -10,6 +10,7 @@ export const AppContextProvider = (props) => {
   const [userData, setUserData] = useState(false);
   const [doctorData, setDoctorData] = useState(false);
   const [loading, setLoading] = useState(true)
+  const [activePatientCustomId, setActivePatientCustomId] = useState(null);
 
   // Send cookies with Axios requests
   axios.defaults.withCredentials = true;
@@ -75,6 +76,23 @@ export const AppContextProvider = (props) => {
     }
   };
 
+  const checkActiveSession = useCallback(async () => {
+    try {
+      axios.defaults.withCredentials = true;
+      const baseUrl = backendUrl.endsWith("/") ? backendUrl.slice(0, -1) : backendUrl;
+      const { data } = await axios.get(`${baseUrl}/api/doctor/current-active-session`);
+
+      if (data.success && data.patientCustomId) {
+        setActivePatientCustomId(data.patientCustomId);
+      } else {
+        setActivePatientCustomId(null);
+      }
+    } catch (error) {
+      console.error("Error checking active session:", error);
+      setActivePatientCustomId(null);
+    }
+  }, [backendUrl]);
+
   // Fetch authentication/user status on initial application load
   useEffect(() => {
     getUserData();
@@ -92,6 +110,9 @@ export const AppContextProvider = (props) => {
     getUserData,
     getAuthState,
     getDoctorData,
+    activePatientCustomId,
+    setActivePatientCustomId,
+    checkActiveSession,
   };
 
   return (

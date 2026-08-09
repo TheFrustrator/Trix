@@ -6,6 +6,7 @@ import accessRequestModel from "../models/accessRequestModel.js";
 import userModel from "../models/userModel.js";
 import diagnosisModel from "../models/diagnosisModel.js";
 import prescriptionModel from "../models/prescriptionModel.js";
+import recentPatientModel from "../models/recentPatientModel.js";
 
 export const doctorRegister = async (req, res) => {
   const { name, email, password, phoneNumber, clinicAdd, Specialization } = req.body;
@@ -627,5 +628,100 @@ export const getActivePatientSummary = async (req, res) => {
   } catch (error) {
     console.error("getActivePatientSummary error:", error);
     return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+
+export const recordRecentPatientVisit = async (doctorId, patientId, patientCustomId, patientName, disease) => {
+  try {
+    await recentPatientModel.findOneAndUpdate(
+      { doctorId, patientId },
+      {
+        patientCustomId,
+        patientName,
+        disease: disease || "General Consultation",
+        lastVisitDate: new Date(),
+      },
+      { upsert: true, new: true }
+    );
+  } catch (error) {
+    console.error("Error recording recent patient:", error);
+  }
+};
+
+// GET Controller: Fetch the 6 most recent patients
+export const getRecentPatients = async (req, res) => {
+  try {
+    const docId = req.docId || req.body?.docId;
+
+    if (!docId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const patients = await recentPatientModel
+      .find({ doctorId: docId })
+      .sort({ lastVisitDate: -1, updatedAt: -1 })
+      .limit(6)
+      .populate("patientId", "name patientId docId");
+
+    const formattedList = patients.map((item) => ({
+      _id: item._id,
+      patientName: item.patientName || item.patientId?.name || "Patient",
+      patientCustomId: item.patientCustomId || item.patientId?.patientId || item.patientId?.docId,
+      lastVisitDate: new Date(item.lastVisitDate).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+      disease: item.disease || "General Consultation",
+    }));
+
+    return res.json({
+      success: true,
+      patients: formattedList,
+    });
+  } catch (error) {
+    console.error("getRecentPatients error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+export const getCurrentActiveSession = async (req, res) => {
+  try {
+    const docId = req.docId || req.body?.docId;
+
+    if (!docId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const now = new Date();
+
+    // Find the most recently granted active session that has not expired
+    const activeSession = await accessRequestModel
+      .findOne({
+        doctorId: docId,
+        status: "granted",
+        expiresAt: { $gt: now },
+      })
+      .sort({ grantedAt: -1 });
+
+    if (!activeSession) {
+      return res.json({
+        success: true,
+        hasActiveSession: false,
+        patientCustomId: null,
+      });
+    }
+
+    return res.json({
+      success: true,
+      hasActiveSession: true,
+      patientCustomId: activeSession.patientCustomId,
+      expiresAt: activeSession.expiresAt,
+    });
+  } catch (error) {
+    console.error("getCurrentActiveSession error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

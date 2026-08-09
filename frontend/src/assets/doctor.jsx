@@ -21,7 +21,7 @@ export const DoctorNavlinkItems = [
     key: "2",
     title: "Active Patients",
     icon: <GiStethoscope />,
-    route: "/active-patient",
+    route: "/doctor/active-patient/:patientCustomId",
   },
 
 ];

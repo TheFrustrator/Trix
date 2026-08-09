@@ -1,4 +1,6 @@
 import accessRequestModel from "../models/accessRequestModel.js";
+import userModel from "../models/userModel.js";
+import { recordRecentPatientVisit } from "./doctorController.js";
 
 // Fetch active/pending requests for the patient
 export const getPatientAccessRequests = async (req, res) => {
@@ -6,7 +8,9 @@ export const getPatientAccessRequests = async (req, res) => {
     const patientId = req.userId || req.body?.userId;
 
     if (!patientId || typeof patientId !== "string") {
-      return res.status(401).json({ success: false, message: "Unauthorized patient account" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized patient account" });
     }
 
     const now = new Date();
@@ -48,13 +52,22 @@ export const updateRequestStatus = async (req, res) => {
     const patientId = req.userId || req.body?.userId;
     const { requestId, action } = req.body;
 
-    if (!requestId || typeof requestId !== "string" || !action || typeof action !== "string") {
-      return res.status(400).json({ success: false, message: "Invalid parameters" });
+    if (
+      !requestId ||
+      typeof requestId !== "string" ||
+      !action ||
+      typeof action !== "string"
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid parameters" });
     }
 
     const allowedActions = ["accept", "deny", "revoke"];
     if (!allowedActions.includes(action)) {
-      return res.status(400).json({ success: false, message: "Action type not permitted" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Action type not permitted" });
     }
 
     const request = await accessRequestModel.findOne({
@@ -63,7 +76,9 @@ export const updateRequestStatus = async (req, res) => {
     });
 
     if (!request) {
-      return res.status(404).json({ success: false, message: "Access request not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Access request not found" });
     }
 
     if (action === "accept") {
@@ -73,6 +88,16 @@ export const updateRequestStatus = async (req, res) => {
       request.status = "granted";
       request.grantedAt = now;
       request.expiresAt = twoHoursLater;
+
+      // Auto-record this patient in the doctor's recent list
+      const patientUser = await userModel.findById(patientId).select("name");
+      await recordRecentPatientVisit(
+        request.doctorId,
+        patientId,
+        request.patientCustomId,
+        patientUser?.name || "Patient",
+        "Active Session"
+      );
     } else if (action === "deny") {
       request.status = "rejected";
     } else if (action === "revoke") {
