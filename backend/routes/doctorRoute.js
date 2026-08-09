@@ -18,9 +18,13 @@ import {
   getActivePatientSummary,
   getRecentPatients,
   getCurrentActiveSession,
+  getPrescriptionsByPatientId,
+  getPrescriptionDetails,
 } from "../controllers/doctorController.js";
 import doctorAuth from "../middleware/doctorMiddleware.js";
 import upload from "../controllers/multer.js";
+
+
 
 const doctorRouter = express.Router();
 
@@ -48,6 +52,16 @@ doctorRouter.get("/current-active-session", doctorAuth, getCurrentActiveSession)
 
 doctorRouter.post("/save-diagnosis", doctorAuth, upload.single("report"), saveDiagnosis);
 doctorRouter.post("/save-prescription", doctorAuth, savePrescription);
+doctorRouter.get(
+  "/prescription-details/:prescriptionId",
+  doctorAuth,
+  getPrescriptionDetails
+);
+doctorRouter.get(
+  "/patient-prescriptions/:patientCustomId",
+  doctorAuth,
+  getPrescriptionsByPatientId
+);
 
 doctorRouter.get("/doctor-data", doctorAuth, getDoctorData);
 

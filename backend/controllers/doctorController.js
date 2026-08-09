@@ -6,10 +6,13 @@ import accessRequestModel from "../models/accessRequestModel.js";
 import userModel from "../models/userModel.js";
 import diagnosisModel from "../models/diagnosisModel.js";
 import prescriptionModel from "../models/prescriptionModel.js";
+import prescriptionPdfModel from "../models/prescriptionPdfModel.js";
 import recentPatientModel from "../models/recentPatientModel.js";
+import mongoose from "mongoose";
 
 export const doctorRegister = async (req, res) => {
-  const { name, email, password, phoneNumber, clinicAdd, Specialization } = req.body;
+  const { name, email, password, phoneNumber, clinicAdd, Specialization } =
+    req.body;
 
   if (!name || !email || !password || !phoneNumber || !clinicAdd) {
     return res.json({ success: false, message: "Missing Details" });
@@ -66,7 +69,10 @@ export const doctorRegister = async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
-    return res.json({ success: true, message: "Doctor registered successfully" });
+    return res.json({
+      success: true,
+      message: "Doctor registered successfully",
+    });
   } catch (error) {
     return res.json({ success: false, message: error.message });
   }
@@ -265,7 +271,10 @@ export const resetPassword = async (req, res) => {
     }
 
     if (!doctor.resetOTP || doctor.resetOtpExpireAt < Date.now()) {
-      return res.json({ success: false, message: "OTP has expired or is invalid" });
+      return res.json({
+        success: false,
+        message: "OTP has expired or is invalid",
+      });
     }
 
     const isMatch = await bcrypt.compare(otp, doctor.resetOTP);
@@ -296,11 +305,15 @@ export const createAccessRequest = async (req, res) => {
     const { patientCustomId } = req.body;
 
     if (!docId || typeof docId !== "string") {
-      return res.status(401).json({ success: false, message: "Unauthorized Doctor Account" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized Doctor Account" });
     }
 
     if (!patientCustomId || typeof patientCustomId !== "string") {
-      return res.status(400).json({ success: false, message: "Patient ID is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Patient ID is required" });
     }
 
     const sanitizedCustomId = patientCustomId.trim();
@@ -310,7 +323,10 @@ export const createAccessRequest = async (req, res) => {
     });
 
     if (!patient) {
-      return res.json({ success: false, message: "No Patient found with this ID" });
+      return res.json({
+        success: false,
+        message: "No Patient found with this ID",
+      });
     }
 
     const targetRoomId = patient.patientId || patient.docId;
@@ -391,7 +407,9 @@ export const cancelAccessRequest = async (req, res) => {
     const { requestId } = req.body;
 
     if (!requestId || typeof requestId !== "string") {
-      return res.status(400).json({ success: false, message: "Request ID is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Request ID is required" });
     }
 
     const request = await accessRequestModel.findOne({
@@ -429,7 +447,9 @@ export const checkAccessRequestStatus = async (req, res) => {
     const { requestId } = req.params;
 
     if (!requestId || typeof requestId !== "string") {
-      return res.status(400).json({ success: false, message: "Invalid request ID" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid request ID" });
     }
 
     const request = await accessRequestModel.findById(requestId);
@@ -480,7 +500,12 @@ export const saveDiagnosis = async (req, res) => {
     const { patientCustomId, diagnosis, notes, date } = req.body;
 
     if (!docId || !patientCustomId || !diagnosis) {
-      return res.status(400).json({ success: false, message: "Missing required diagnosis details" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Missing required diagnosis details",
+        });
     }
 
     const reportPath = req.file ? req.file.path : null;
@@ -509,8 +534,16 @@ export const savePrescription = async (req, res) => {
     const docId = req.docId || req.body?.docId;
     const { patientCustomId, medicines, notes, date } = req.body;
 
-    if (!docId || !patientCustomId || !medicines || !Array.isArray(medicines) || medicines.length === 0) {
-      return res.status(400).json({ success: false, message: "At least one medicine is required" });
+    if (
+      !docId ||
+      !patientCustomId ||
+      !medicines ||
+      !Array.isArray(medicines) ||
+      medicines.length === 0
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "At least one medicine is required" });
     }
 
     const newPrescription = new prescriptionModel({
@@ -548,7 +581,10 @@ export const getActiveSessionDetails = async (req, res) => {
     });
 
     if (!activeSession) {
-      return res.json({ success: false, message: "No active session found or session expired" });
+      return res.json({
+        success: false,
+        message: "No active session found or session expired",
+      });
     }
 
     return res.json({
@@ -565,16 +601,24 @@ export const getActivePatientSummary = async (req, res) => {
     const { patientCustomId } = req.params;
 
     if (!patientCustomId || typeof patientCustomId !== "string") {
-      return res.status(400).json({ success: false, message: "Invalid Patient ID" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid Patient ID" });
     }
 
     // Explicitly query for dateOfBirth and dob
-    const patient = await userModel.findOne({
-      $or: [{ patientId: patientCustomId }, { docId: patientCustomId }],
-    }).select("name email phoneNumber patientId docId dateOfBirth dob allergies historyList");
+    const patient = await userModel
+      .findOne({
+        $or: [{ patientId: patientCustomId }, { docId: patientCustomId }],
+      })
+      .select(
+        "name email phoneNumber patientId docId dateOfBirth dob allergies historyList",
+      );
 
     if (!patient) {
-      return res.status(404).json({ success: false, message: "Patient not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Patient not found" });
     }
 
     // Format Date of Birth safely
@@ -607,32 +651,41 @@ export const getActivePatientSummary = async (req, res) => {
         patientId: patient.patientId || patient.docId || patientCustomId,
         contact: patient.phoneNumber || patient.email || "N/A",
         dateOfBirth: formattedDOB,
-        allergies: patient.allergies && patient.allergies.length > 0
-          ? patient.allergies
-          : [
-              { id: "1", name: "Penicillin", severity: "Severe Rash" },
-              { id: "2", name: "Peanuts", severity: "Mild Reaction" },
-            ],
-        condensedHistory: recentDiagnoses.length > 0
-          ? recentDiagnoses.map((d) => ({
-              id: d._id,
-              title: `Recent Visit: ${d.date}`,
-              detail: `Diagnosis: ${d.diagnosis}`,
-            }))
-          : [
-              { id: "h1", title: "Recent Visit", detail: "General Checkup" },
-              { id: "h2", title: "Diagnosis", detail: "Hypertension" },
-            ],
+        allergies:
+          patient.allergies && patient.allergies.length > 0
+            ? patient.allergies
+            : [
+                { id: "1", name: "Penicillin", severity: "Severe Rash" },
+                { id: "2", name: "Peanuts", severity: "Mild Reaction" },
+              ],
+        condensedHistory:
+          recentDiagnoses.length > 0
+            ? recentDiagnoses.map((d) => ({
+                id: d._id,
+                title: `Recent Visit: ${d.date}`,
+                detail: `Diagnosis: ${d.diagnosis}`,
+              }))
+            : [
+                { id: "h1", title: "Recent Visit", detail: "General Checkup" },
+                { id: "h2", title: "Diagnosis", detail: "Hypertension" },
+              ],
       },
     });
   } catch (error) {
     console.error("getActivePatientSummary error:", error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
 
-
-export const recordRecentPatientVisit = async (doctorId, patientId, patientCustomId, patientName, disease) => {
+export const recordRecentPatientVisit = async (
+  doctorId,
+  patientId,
+  patientCustomId,
+  patientName,
+  disease,
+) => {
   try {
     await recentPatientModel.findOneAndUpdate(
       { doctorId, patientId },
@@ -642,7 +695,7 @@ export const recordRecentPatientVisit = async (doctorId, patientId, patientCusto
         disease: disease || "General Consultation",
         lastVisitDate: new Date(),
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
   } catch (error) {
     console.error("Error recording recent patient:", error);
@@ -667,7 +720,10 @@ export const getRecentPatients = async (req, res) => {
     const formattedList = patients.map((item) => ({
       _id: item._id,
       patientName: item.patientName || item.patientId?.name || "Patient",
-      patientCustomId: item.patientCustomId || item.patientId?.patientId || item.patientId?.docId,
+      patientCustomId:
+        item.patientCustomId ||
+        item.patientId?.patientId ||
+        item.patientId?.docId,
       lastVisitDate: new Date(item.lastVisitDate).toLocaleDateString("en-GB", {
         day: "2-digit",
         month: "short",
@@ -685,7 +741,6 @@ export const getRecentPatients = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 export const getCurrentActiveSession = async (req, res) => {
   try {
@@ -722,6 +777,95 @@ export const getCurrentActiveSession = async (req, res) => {
     });
   } catch (error) {
     console.error("getCurrentActiveSession error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getPrescriptionsByPatientId = async (req, res) => {
+  try {
+    const { patientCustomId } = req.params;
+
+    const prescriptions = await prescriptionPdfModel
+      .find({ patientCustomId })
+      .populate("doctorId", "name clinicAdd Specialization")
+      .sort({ createdAt: -1 });
+
+    return res.json({
+      success: true,
+      prescriptions,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getPrescriptionDetails = async (req, res) => {
+  try {
+    const { prescriptionId } = req.params;
+
+    if (!prescriptionId || typeof prescriptionId !== "string") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid prescription ID" });
+    }
+
+    let rx = null;
+
+    // Safely check if the ID is a valid MongoDB ObjectId (24 hex characters)
+    if (mongoose.Types.ObjectId.isValid(prescriptionId)) {
+      rx = await prescriptionPdfModel
+        .findById(prescriptionId)
+        .populate(
+          "doctorId",
+          "name clinicAdd Specialization phoneNumber regNo",
+        );
+    }
+    // If not a standard ObjectId, try searching by the custom RX- string
+    else {
+      rx = await prescriptionPdfModel
+        .findOne({ prescriptionCustomId: prescriptionId })
+        .populate(
+          "doctorId",
+          "name clinicAdd Specialization phoneNumber regNo",
+        );
+    }
+
+    if (!rx) {
+      return res.status(404).json({
+        success: false,
+        message: "Prescription record not found in database",
+      });
+    }
+
+    return res.json({
+      success: true,
+      prescriptionData: {
+        id: rx._id,
+        prescriptionCustomId: rx.prescriptionCustomId,
+        pdfFileName: rx.pdfFileName,
+        dateIssued: rx.issueDate,
+        validUntil: rx.validUntilDate,
+        doctor: {
+          name: rx.doctorId?.name || "Dr. Eleanor Vance",
+          specialization: rx.doctorId?.Specialization || "MBBS, MD",
+          clinic: rx.doctorId?.clinicAdd || "Oakwood Clinic",
+          regNo: rx.doctorId?.regNo || "12345",
+          address: rx.doctorId?.clinicAdd || "123 Oakwood Ave, Cityville",
+          phone: rx.doctorId?.phoneNumber || "(555) 0123",
+        },
+        patient: {
+          name: rx.patientName || "Patient",
+          id: rx.patientCustomId || "P-4041-XYZ",
+          ageGender: rx.patientAgeGender || "34 / Female",
+        },
+        diagnosis: rx.diagnosis || "General Consultation",
+        medicines: rx.medicines || [],
+        notes: rx.notes || "",
+        status: rx.status || "ACTIVE",
+      },
+    });
+  } catch (error) {
+    console.error("getPrescriptionDetails error:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
