@@ -84,14 +84,14 @@ const EmailVerify = () => {
         ? backendUrl.slice(0, -1)
         : backendUrl;
 
-      const { data } = await axios.post(`${baseUrl}/api/auth/verify-account`, {
+      const { data } = await axios.post(`${baseUrl}/api/doctor/verify-account`, {
         otp,
       });
 
       if (data.success) {
         toast.success(data.message || "Email verified successfully!");
         await getUserData(); // Refresh global Context state
-        navigate("/patient-dashboard");
+        navigate("/doctor-dashboard");
       } else {
         toast.error(data.message || "Verification failed.");
       }
@@ -117,7 +117,7 @@ const EmailVerify = () => {
         ? backendUrl.slice(0, -1)
         : backendUrl;
 
-      const { data } = await axios.post(`${baseUrl}/api/auth/send-verify-otp`);
+      const { data } = await axios.post(`${baseUrl}/api/doctor/send-verify-otp`);
 
       if (data.success) {
         toast.success(data.message || "New OTP sent to your email.");

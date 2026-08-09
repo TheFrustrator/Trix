@@ -9,32 +9,31 @@ export const AppContextProvider = (props) => {
   const [isLoggedin, setIsLOggedin] = useState(false);
   const [userData, setUserData] = useState(false);
   const [doctorData, setDoctorData] = useState(false);
+  const [loading, setLoading] = useState(true)
 
   // Send cookies with Axios requests
   axios.defaults.withCredentials = true;
 
-  const getAuthState = async() => {
+  const getAuthState = async () => {
     try {
-      const {data} = await axios.get(backendUrl + '/api/auth/is-auth')
-      if(data.success){
-        setIsLOggedin(true)
-        getUserData()
+      const { data } = await axios.get(backendUrl + "/api/auth/is-auth");
+      if (data.success) {
+        setIsLOggedin(true);
+        // Try fetching both or load according to account type
+        getUserData();
+        getDoctorData();
       }
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Something went wrong. Please try again.";
-
-      toast.error(errorMessage);
+      setIsLOggedin(false);
+      console.error("Auth state error:", error.message);
+    }finally {
+      setLoading(false); // End loading when check finishes
     }
-  }
+  };
 
-
-  // user data fetch 
+  // User data fetch 
   const getUserData = async () => {
     try {
-      // Standardize base URL trailing slashes
       const baseUrl = backendUrl?.endsWith("/")
         ? backendUrl.slice(0, -1)
         : backendUrl;
@@ -43,45 +42,43 @@ export const AppContextProvider = (props) => {
 
       if (data.success) {
         setUserData(data.userData);
+        setIsLOggedin(true);
       } else {
-        toast.error(data.message);
+        // Log quietly instead of throwing toast.error("User not found") 
+        // when logged in as a Doctor
+        console.log("User profile check:", data.message);
       }
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Something went wrong. Please try again.";
-
-      toast.error(errorMessage);
+      console.error("Error fetching user data:", error.message);
     }
   };
 
+  // Doctor data fetch
   const getDoctorData = async () => {
-  try {
-    const baseUrl = backendUrl?.endsWith("/")
-      ? backendUrl.slice(0, -1)
-      : backendUrl;
+    try {
+      const baseUrl = backendUrl?.endsWith("/")
+        ? backendUrl.slice(0, -1)
+        : backendUrl;
 
-    // Updated route path to match doctorRouter mounting point
-    const { data } = await axios.get(`${baseUrl}/api/doctor/doctor-data`);
+      const { data } = await axios.get(`${baseUrl}/api/doctor/doctor-data`);
 
-    if (data.success) {
-      setDoctorData(data.userData);
-    } else {
-      toast.error(data.message);
+      if (data.success) {
+        setDoctorData(data.userData);
+        setIsLOggedin(true);
+      } else {
+        // Log quietly instead of throwing toast.error("User not found") 
+        // when logged in as a Patient/User
+        console.log("Doctor profile check:", data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching doctor data:", error.message);
     }
-  } catch (error) {
-    const errorMessage =
-      error.response?.data?.message ||
-      error.message ||
-      "Something went wrong. Please try again.";
+  };
 
-    toast.error(errorMessage);
-  }
-};
-  // FIX: Fetch authentication/user status on initial application load
+  // Fetch authentication/user status on initial application load
   useEffect(() => {
     getUserData();
+    getDoctorData();
   }, []);
 
   const value = {
@@ -90,6 +87,8 @@ export const AppContextProvider = (props) => {
     setIsLOggedin,
     userData,
     setUserData,
+    doctorData,
+    setDoctorData,
     getUserData,
     getAuthState,
     getDoctorData,

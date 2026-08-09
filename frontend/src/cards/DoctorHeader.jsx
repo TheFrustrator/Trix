@@ -1,7 +1,20 @@
-import React from "react";
+import React, { useContext } from "react";
 import { CiLocationOn } from "react-icons/ci";
+import { AppContext } from "../context/AppContext";
+
 
 const DoctorHeader = ({ userName, isVerified, headerIcon, ClinicName }) => {
+  const { doctorData } = useContext(AppContext);
+   const displayName =
+    userName || doctorData?.name || doctorData?.userName || "Guest User";
+
+  const verifiedStatus =
+    isVerified !== undefined
+      ? isVerified
+      : doctorData?.isVerified;
+
+  const clinicAdd =
+    ClinicName || doctorData?.clinicAdd || doctorData?.ClinicName || "Not Found";
   return (
     <div className="flex flex-row justify-end items-center py-4 px-5 gap-5">
       {/* Account Icons and data */}
@@ -15,21 +28,19 @@ const DoctorHeader = ({ userName, isVerified, headerIcon, ClinicName }) => {
 
         {/* User details portion */}
         <div className="flex flex-col w-full mx-1 my-1">
-          <span className="text-primary font-semibold">{userName}</span>
+          <span className="text-primary font-semibold">{displayName}</span>
           <div className="my-1 flex justify-between items-center">
             <span className="border rounded-full bg-blue-200">
               {" "}
               <h1 className="font-semibold opacity-55 text-sm my-1 mx-1.5 gap-1">
-                {isVerified === true || isVerified === "true"
-                  ? "Verified"
-                  : "Not Verified"}
+                {verifiedStatus ? "Verified" : "Not Verified"}
               </h1>
             </span>
 
             <span className="flex flex-row items-center justify-center">
               <CiLocationOn />
               <h1 className="font-semibold opacity-55 text-sm my-1 mx-1 gap-1">
-                {ClinicName}
+                {clinicAdd}
               </h1>
             </span>
           </div>

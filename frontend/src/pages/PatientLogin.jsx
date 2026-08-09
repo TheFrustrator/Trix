@@ -1,6 +1,5 @@
 import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Icons, loginRoles, userRoles } from "../assets/assets";
 import UserLoginHeader from "../cards/UserLoginHeader";
 import LoginCard from "../cards/LoginCard";
 import axios from "axios";
@@ -25,10 +24,10 @@ const PatientLogin = () => {
 
       if (data.success) {
         setIsLOggedin(true);
-        getUserData()
+        getUserData();
         navigate("/patient-dashboard");
-        toast.success(`Welcome back ${data.name}`)
-      }else{
+        toast.success(`Welcome back ${data.name}`);
+      } else {
         toast.error(data.message || "Login failed.");
       }
     } catch (error) {

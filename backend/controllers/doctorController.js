@@ -1,12 +1,14 @@
 import doctorModel from "../models/doctorModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import transporter from "../config/nodemailer.js"; // Adjust path to your nodemailer config
+import transporter from "../config/nodemailer.js";
+import accessRequestModel from "../models/accessRequestModel.js";
+import userModel from "../models/userModel.js";
 
 export const doctorRegister = async (req, res) => {
-  const { name, email, password, phoneNumber, clinicAdd, Specialization} = req.body;
+  const { name, email, password, phoneNumber, clinicAdd, Specialization } = req.body;
 
-  if (!name || !email || !password || !phoneNumber || !clinicAdd ) {
+  if (!name || !email || !password || !phoneNumber || !clinicAdd) {
     return res.json({ success: false, message: "Missing Details" });
   }
 
@@ -27,7 +29,6 @@ export const doctorRegister = async (req, res) => {
     const safePhone = (phoneNumber || "0000").slice(-4);
     const randomDigits = Math.floor(1000 + Math.random() * 9000).toString();
 
-    // Changed PAT to DOC
     const generatedDoctorID = `${safeName}${safePhone}${randomDigits}DOC`;
 
     const doctor = new doctorModel({
@@ -74,27 +75,25 @@ export const doctorlogin = async (req, res) => {
   if (!email || !password) {
     return res.json({
       success: false,
-      message: "Email and pasword are required",
+      message: "Email and password are required",
     });
   }
 
   try {
     const doctor = await doctorModel.findOne({ email });
 
-   
-
     if (!doctor) {
       return res.json({ success: false, message: "Invalid credentials" });
     }
 
-     if(!doctor.isVerified){
-      return res.json({success: false, message: "Doctor is not verified"})
+    if (!doctor.isVerified) {
+      return res.json({ success: false, message: "Doctor is not verified" });
     }
 
     const isMatch = await bcrypt.compare(password, doctor.password);
 
     if (!isMatch) {
-      return res.json({ success: false, message: "invalid credentials" });
+      return res.json({ success: false, message: "Invalid credentials" });
     }
     const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
@@ -128,7 +127,7 @@ export const doctorlogout = async (req, res) => {
 
 export const sendVerifyOtp = async (req, res) => {
   try {
-    const { docId } = req.body;
+    const docId = req.docId || req.body?.docId;
 
     if (!docId) {
       return res.json({ success: false, message: "User ID is required" });
@@ -141,14 +140,12 @@ export const sendVerifyOtp = async (req, res) => {
     }
 
     if (doctor.isVerified) {
-      // Added missing 'return' keyword
       return res.json({ success: false, message: "Account already verified" });
     }
 
     const otp = String(Math.floor(100000 + Math.random() * 900000));
 
     doctor.verifyOTP = otp;
-    // Fixed 'date.now()' -> 'Date.now()'
     doctor.verifyOTPExpireAt = Date.now() + 24 * 60 * 60 * 1000;
 
     await doctor.save();
@@ -172,7 +169,8 @@ export const sendVerifyOtp = async (req, res) => {
 };
 
 export const verifyEmail = async (req, res) => {
-  const { docId, otp } = req.body;
+  const docId = req.docId || req.body?.docId;
+  const { otp } = req.body;
 
   if (!docId || !otp) {
     return res.json({ success: false, message: "Missing Details" });
@@ -203,7 +201,6 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
-// check user is authenticated
 export const isAuthenticated = async (req, res) => {
   try {
     return res.json({ success: true });
@@ -212,10 +209,6 @@ export const isAuthenticated = async (req, res) => {
   }
 };
 
-
-
-
-// Send Password Reset OTP
 export const sendResetOtp = async (req, res) => {
   const { email } = req.body;
 
@@ -233,7 +226,6 @@ export const sendResetOtp = async (req, res) => {
     const hashedOtp = await bcrypt.hash(rawOtp, 10);
 
     doctor.resetOTP = hashedOtp;
-    // Set expiry to 15 minutes
     doctor.resetOtpExpireAt = Date.now() + 15 * 60 * 1000;
 
     await doctor.save();
@@ -253,7 +245,6 @@ export const sendResetOtp = async (req, res) => {
   }
 };
 
-// Reset Password with OTP Verification
 export const resetPassword = async (req, res) => {
   const { email, otp, newPassword } = req.body;
 
@@ -296,11 +287,127 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+export const createAccessRequest = async (req, res) => {
+  try {
+    const docId = req.docId || req.body?.docId;
+    const { patientCustomId } = req.body;
+
+    if (!docId || typeof docId !== "string") {
+      return res.status(401).json({ success: false, message: "Unauthorized Doctor Account" });
+    }
+
+    if (!patientCustomId || typeof patientCustomId !== "string") {
+      return res.status(400).json({ success: false, message: "Patient ID is required" });
+    }
+
+    const sanitizedCustomId = patientCustomId.trim();
+
+    const patient = await userModel.findOne({
+      $or: [{ patientId: sanitizedCustomId }, { docId: sanitizedCustomId }],
+    });
+
+    if (!patient) {
+      return res.json({ success: false, message: "No Patient found with this ID" });
+    }
+
+    const targetRoomId = patient.patientId || patient.docId;
+
+    let existingRequest = await accessRequestModel.findOne({
+      doctorId: docId,
+      patientId: patient._id,
+      status: { $in: ["pending", "granted"] },
+    });
+
+    if (existingRequest) {
+      const populatedExisting = await accessRequestModel
+        .findById(existingRequest._id)
+        .populate("doctorId", "name clinicAdd Specialization");
+
+      const io = req.app.get("io");
+      if (io && existingRequest.status === "pending") {
+        io.to(targetRoomId).emit("new-access-request", {
+          _id: populatedExisting._id,
+          doctorId: populatedExisting.doctorId,
+          createdAt: populatedExisting.createdAt,
+          status: "pending",
+        });
+      }
+
+      return res.json({
+        success: true,
+        alreadyExists: true,
+        requestId: existingRequest._id,
+        patientName: patient.name,
+        patientCustomId: targetRoomId,
+        status: existingRequest.status,
+        message: `Request is currently ${existingRequest.status}`,
+      });
+    }
+
+    const newRequest = new accessRequestModel({
+      doctorId: docId,
+      patientId: patient._id,
+      patientCustomId: targetRoomId,
+      status: "pending",
+    });
+
+    await newRequest.save();
+
+    const populatedRequest = await accessRequestModel
+      .findById(newRequest._id)
+      .populate("doctorId", "name clinicAdd Specialization");
+
+    // Real-time Emit over WebSocket
+    const io = req.app.get("io");
+    if (io) {
+      io.to(targetRoomId).emit("new-access-request", {
+        _id: populatedRequest._id,
+        doctorId: populatedRequest.doctorId,
+        createdAt: populatedRequest.createdAt,
+        status: "pending",
+      });
+    }
+
+    return res.json({
+      success: true,
+      requestId: newRequest._id,
+      patientName: patient.name,
+      patientCustomId: targetRoomId,
+      status: "pending",
+      message: "Access request sent successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const checkAccessRequestStatus = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+
+    if (!requestId || typeof requestId !== "string") {
+      return res.status(400).json({ success: false, message: "Invalid request ID" });
+    }
+
+    const request = await accessRequestModel.findById(requestId);
+
+    if (!request) {
+      return res.json({ success: false, message: "Request not found" });
+    }
+
+    return res.json({
+      success: true,
+      status: request.status,
+      patientCustomId: request.patientCustomId,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 export const getDoctorData = async (req, res) => {
   try {
-    // Read from middleware (userId or docId)
-    const doctorId =  req.docId || req.body?.docId;
+    const doctorId = req.docId || req.body?.docId;
     const doctor = await doctorModel.findById(doctorId);
 
     if (!doctor) {
@@ -315,8 +422,8 @@ export const getDoctorData = async (req, res) => {
         docId: doctor.docId,
         phoneNumber: doctor.phoneNumber,
         email: doctor.email,
-        clinicAdd: doctor.clinicAdd,           // Fixed key name
-        Specialization: doctor.Specialization, // Fixed key name
+        clinicAdd: doctor.clinicAdd,
+        Specialization: doctor.Specialization,
       },
     });
   } catch (error) {

@@ -43,12 +43,7 @@ const ActivePatient = () => {
       <div className="flex-1 w-full flex flex-col p-6 gap-6 overflow-x-hidden">
         {/* Right side header component */}
         <div className="w-full flex justify-end">
-          <DoctorHeader
-            userName={doctorData.name}
-            isVerified={doctorData.isVerified}
-            headerIcon={DoctorIcon.FDoctorIcon}
-            ClinicName={doctorData.clinicName}
-          />
+          <DoctorHeader headerIcon={DoctorIcon.FDoctorIcon} />
         </div>
 
         {/* Acees bar  */}
