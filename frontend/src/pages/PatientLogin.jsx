@@ -27,6 +27,7 @@ const PatientLogin = () => {
         setIsLOggedin(true);
         getUserData()
         navigate("/patient-dashboard");
+        toast.success(`Welcome back ${data.name}`)
       }else{
         toast.error(data.message || "Login failed.");
       }

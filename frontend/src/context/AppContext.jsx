@@ -12,6 +12,23 @@ export const AppContextProvider = (props) => {
   // Send cookies with Axios requests
   axios.defaults.withCredentials = true;
 
+  const getAuthState = async() => {
+    try {
+      const {data} = await axios.get(backendUrl + '/api/auth/is-auth')
+      if(data.success){
+        setIsLOggedin(true)
+        getUserData()
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Something went wrong. Please try again.";
+
+      toast.error(errorMessage);
+    }
+  }
+
   const getUserData = async () => {
     try {
       // Standardize base URL trailing slashes

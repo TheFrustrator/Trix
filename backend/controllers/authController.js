@@ -82,7 +82,7 @@ export const login = async (req, res) => {
    
 
     if (!user) {
-      res.json({ success: false, message: "Invalid credentials" });
+      return res.json({ success: false, message: "Invalid credentials" });
     }
 
      if(!user.isVerified){
@@ -92,7 +92,7 @@ export const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      res.json({ success: false, message: "invalid credentials" });
+      return res.json({ success: false, message: "invalid credentials" });
     }
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",

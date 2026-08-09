@@ -23,7 +23,6 @@ const PatientSignup = () => {
   const onSubmitHandler = async (event) => {
     event.preventDefault();
 
-    // Client-side validation for matching passwords
     if (password !== confirmPassword) {
       return toast.error("Passwords do not match!");
     }
@@ -31,22 +30,26 @@ const PatientSignup = () => {
     try {
       axios.defaults.withCredentials = true;
 
-      // Ensure proper URL formatting regardless of trailing slash in backendUrl
-      const baseUrl = backendUrl?.endsWith("/")
-        ? backendUrl
-        : `${backendUrl}/`;
-
-      const { data } = await axios.post(
-        `${baseUrl}api/auth/patient-signup`,
-        { name, email, phoneNumber, password, dob }
+      // Step 1: Register user and set HTTP-only cookie
+      const { data: regData } = await axios.post(
+        `${backendUrl}/api/auth/patient-signup`,
+        { name, email, phoneNumber, password, dob },
       );
 
-      if (data.success) {
-        setIsLOggedin(true);
-        getUserData()
+      if (!regData.success) {
+        return toast.error(regData.message || "Registration failed");
+      }
+
+      // Step 2: Request verification OTP (cookie will automatically authenticate req.userId)
+      const { data: otpData } = await axios.post(
+        `${backendUrl}/api/auth/send-verify-otp`,
+      );
+
+      if (otpData.success) {
+        toast.success("Account created! OTP sent to your email.");
         navigate("/email-verify");
       } else {
-        toast.error(data.message || "Signup failed.");
+        toast.error(otpData.message);
       }
     } catch (error) {
       const errorMessage =
