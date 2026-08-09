@@ -11,26 +11,29 @@ import DoctorSignUp from "./pages/DoctorSignUp";
 import PharmacySignUp from "./pages/PharmacySignUp";
 import PatientDashboard from "./paitent/PatientDashboard";
 import MedicalHistory from "./paitent/MedicalHistory";
-import PrescriptionPatient from "./paitent/PrescriptionPatient";
+
 import AccessRequest from "./paitent/AccessRequest";
 
-import SettingPatient from "./paitent/SettingPatient";
+
 import PharmacyDashboard from "./pharmacy/PharmacyDashboard";
 import PrescriptionView from "./pharmacy/PrescriptionView";
 import DoctorDashboard from "./doctor/DoctorDashboard";
-import DoctorSetting from "./doctor/DoctorSetting";
-import PrescriptionIssue from "./doctor/PrescriptionIssue";
+
 import ActivePatient from "./doctor/ActivePatient";
-import History from "./doctor/History";
+
 import ActivePatientSummary from "./doctor/ActivePatientSummary";
 import ActivePatientHistory from "./doctor/ActivePatientHistory";
 import ActivePatientPrescription from "./doctor/ActivePatientPrescription";
 import PdfPrescriptionView from "./doctor/PdfPrescriptionView";
-import { ViewPrescriptionPatient } from "./paitent/ViewPrescriptionPatient";
+import EmailVerify from './pages/EmailVerify';
+import { ToastContainer, toast } from 'react-toastify';
 
 const App = () => {
   return (
+    
     <div className="">
+      <ToastContainer />
+   
       {/* <div className="flex ml-[86%]  bg-blue-100 rounded-full w-36 h-36" ></div>
         <div className="flex ml-[-1.8%] bg-blue-100 rounded-full w-14 h-14" ></div>
         <div className="flex mt-5 ml-[-1.8%] bg-gray-200 rounded-full w-40 h-40" ></div> */}
@@ -62,10 +65,8 @@ const App = () => {
 
         {/* Doctor component */}
         <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
-            
-        
-        
-         {/* <Route path="/patient-prescription/:patientId" element={<ViewPrescriptionPatient />} /> */}
+
+        {/* <Route path="/patient-prescription/:patientId" element={<ViewPrescriptionPatient />} /> */}
 
         <Route path="/active-patient" element={<ActivePatient />}>
           <Route index element={<Navigate to="summary" replace />} />
@@ -74,6 +75,8 @@ const App = () => {
           <Route path="prescription" element={<ActivePatientPrescription />} />
         </Route>
         <Route path="/prescription-view" element={<PdfPrescriptionView />} />
+       
+        <Route path="/email-verify" element={<EmailVerify />}/>
       </Routes>
     </div>
   );

@@ -82,8 +82,7 @@ function MedicalHistory() {
         {/* User Header */}
         <div className="w-full flex justify-end">
           <UserHeaderCard
-            userName={"John Doe"}
-            medicalID={"MED-2026-XXXX"}
+           
             headerIcon={PatientIcons.userIcon}
           />
         </div>

@@ -4,7 +4,7 @@ import userModel from "../models/userModel.js";
 import transporter from "../config/nodemailer.js";
 
 export const register = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, dob, phoneNumber } = req.body;
 
   if (!name || !email || !password) {
     return res.json({ success: false, message: "Missing Details" });
@@ -17,8 +17,25 @@ export const register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    // patientId
 
-    const user = new userModel({ name, email, password: hashedPassword });
+    const safeName = (name || "PATIENT")
+      .replace(/\s+/g, "")
+      .slice(0, 3)
+      .toUpperCase();
+    const safePhone = (phoneNumber || "0000").slice(-4);
+    const randomDigits = Math.floor(1000 + Math.random() * 9000).toString();
+
+    const generatedPatientID = `${safeName}${safePhone}${randomDigits}PAT`;
+
+    const user = new userModel({
+      name,
+      email,
+      password: hashedPassword,
+      phoneNumber,
+      dob,
+      patientId: generatedPatientID,
+    });
     await user.save();
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -52,7 +69,7 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !email) {
+  if (!email || !password) {
     return res.json({
       success: false,
       message: "Email and pasword are required",
@@ -62,8 +79,14 @@ export const login = async (req, res) => {
   try {
     const user = await userModel.findOne({ email });
 
+   
+
     if (!user) {
       res.json({ success: false, message: "Invalid credentials" });
+    }
+
+     if(!user.isVerified){
+      return res.json({success: false, message: "User is not verified"})
     }
 
     const isMatch = await bcrypt.compare(password, user.password);

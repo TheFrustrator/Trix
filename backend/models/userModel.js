@@ -14,6 +14,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  dob:{type: Date},
+  phoneNumber: {
+    type: String,
+    required: true
+  },
+  patientId:{
+    type: String,
+  },
 
   verifyOTP: {
     type: String,

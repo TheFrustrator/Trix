@@ -6,37 +6,26 @@ export const AppContext = createContext();
 
 export const AppContextProvider = (props) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
-  const [isLoggedin, setIsLoggedin] = useState(false);
+  const [isLoggedin, setIsLOggedin] = useState(false);
   const [userData, setUserData] = useState(false);
-  const [authReady, setAuthReady] = useState(false);
 
-  const getAuthState = async () => {
-    try {
-      const { data } = await axios.get(backendUrl + "/api/auth/is-auth", {
-        withCredentials: true,
-      });
-      if (data.success) {
-        setIsLoggedin(true);
-        await getUserData();
-      }
-    } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Something went wrong. Please try again.";
-
-      if (error.response?.status !== 401 && error.response?.status !== 403) toast.error(errorMessage);
-    } finally {
-      setAuthReady(true);
-    }
-  };
+  // Send cookies with Axios requests
+  axios.defaults.withCredentials = true;
 
   const getUserData = async () => {
     try {
-      const { data } = await axios.get(backendUrl + "/api/user/data", {
-        withCredentials: true,
-      });
-      data.success ? setUserData(data.userData) : toast.error(data.message);
+      // Standardize base URL trailing slashes
+      const baseUrl = backendUrl?.endsWith("/")
+        ? backendUrl.slice(0, -1)
+        : backendUrl;
+
+      const { data } = await axios.get(`${baseUrl}/api/user/data`);
+
+      if (data.success) {
+        setUserData(data.userData);
+      } else {
+        toast.error(data.message);
+      }
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
@@ -47,19 +36,20 @@ export const AppContextProvider = (props) => {
     }
   };
 
+  // FIX: Fetch authentication/user status on initial application load
   useEffect(() => {
-    getAuthState();
+    getUserData();
   }, []);
 
   const value = {
     backendUrl,
     isLoggedin,
-    setIsLoggedin,
+    setIsLOggedin,
     userData,
-    authReady,
     setUserData,
     getUserData,
   };
+
   return (
     <AppContext.Provider value={value}>{props.children}</AppContext.Provider>
   );

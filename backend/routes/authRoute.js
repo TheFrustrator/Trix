@@ -1,6 +1,6 @@
 import express from "express";
 import {
-    isAuthenticated,
+  isAuthenticated,
   login,
   logout,
   register,
@@ -13,8 +13,8 @@ import userAuth from "../middleware/userAuth.js";
 
 const authRouter = express.Router();
 
-authRouter.post("/register", register);
-authRouter.post("/login", login);
+authRouter.post("/patient-signup", register);
+authRouter.post("/patient-login", login);
 authRouter.post("/logout", logout);
 authRouter.post("/send-verify-otp", userAuth, sendVerifyOtp);
 authRouter.post("/verify-account", userAuth, verifyEmail);

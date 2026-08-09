@@ -49,11 +49,7 @@ function MedicalHistory() {
       <div className="flex-1 w-full flex flex-col p-6 gap-6 overflow-x-hidden">
         {/* Header component  */}
         <div className="w-full flex justify-end">
-          <UserHeaderCard
-            userName={"Jhon Doe"}
-            medicalID={"MED-2026-XXXX"}
-            headerIcon={PatientIcons.userIcon}
-          />
+          <UserHeaderCard headerIcon={PatientIcons.userIcon} />
         </div>
 
         <h1 className="font-bold lg:text-3xl sm:text-xl text-primary">
@@ -112,8 +108,9 @@ function MedicalHistory() {
                   Active Sessions
                 </h1>
                 <span className="text-xs rounded-full bg-green-500/40 flex items-center">
-                <h1 className="mx-2 my-1 text-green-800 font-semibold">Active</h1>
-                  
+                  <h1 className="mx-2 my-1 text-green-800 font-semibold">
+                    Active
+                  </h1>
                 </span>
               </div>
 

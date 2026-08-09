@@ -2,7 +2,9 @@ import userModel from "../models/userModel.js";
 
 export const getUserData = async (req, res) => {
   try {
-    const user = await userModel.findById(req.userId);
+    // FIX: Read userId directly attached by userAuth middleware
+    const userId = req.userId || req.body?.userId;
+    const user = await userModel.findById(userId);
 
     if (!user) {
       return res.json({ success: false, message: "User not found" });
@@ -12,13 +14,13 @@ export const getUserData = async (req, res) => {
       success: true,
       userData: {
         name: user.name,
-        role: user.role,
         isVerified: user.isVerified,
-        patientID:user.patientID,
-        clinicName: user.clinicName,
+        patientId: user.patientId,
+        dob: user.dob,
+        email: user.email,
       },
     });
   } catch (error) {
-    return res.json({ success: false, message: error.message });
+    res.json({ success: false, message: error.message });
   }
 };

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 
-const LoginCard = ({email,password,setEmail,setPassword}) => {
+const LoginCard = ({email,password,setEmail,setPassword, onSubmitHandler}) => {
  
   return (
-    <form className="min-h-[80vh] flex items-center">
+    <form onSubmit={onSubmitHandler} className="min-h-[80vh] flex items-center">
       <div className="flex flex-col gap-3 m-auto items-center p-8 min-w-[340px] sm:min-w-96 border rounded-xl text-primary text-sm shadow-lg">
         <p className="text-3xl font-semibold mb-5">Login to MedLink</p>
         <div className="w-full">
@@ -11,7 +11,7 @@ const LoginCard = ({email,password,setEmail,setPassword}) => {
           <input
             type="email"
             placeholder="dummy@gmail.com"
-            onChange={(e) => setEmail(e.target.email)}
+            onChange={(e) => setEmail(e.target.value)}
             value={email}
             className="border border-blue-100 w-full rounded-lg p-2 mt-1"
           />
@@ -21,7 +21,7 @@ const LoginCard = ({email,password,setEmail,setPassword}) => {
           <input
             type="password"
             placeholder="*********"
-            onChange={(e) => setPassword(e.target.password)}
+            onChange={(e) => setPassword(e.target.value)}
             value={password}
             className="border border-blue-100 w-full rounded-lg p-2 mt-1"
           />

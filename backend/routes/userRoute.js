@@ -1,13 +1,6 @@
 import express from "express";
 import userAuth from "../middleware/userAuth.js";
 import { getUserData } from "../controllers/userController.js";
-import {
-  activeSession,
-  decideRequest,
-  patientRequests,
-  requestAccess,
-  searchPatients,
-} from "../controllers/accessController.js";
 
 const userRouter = express.Router();
 
