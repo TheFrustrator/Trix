@@ -567,15 +567,33 @@ export const getActivePatientSummary = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid Patient ID" });
     }
 
+    // Explicitly query for dateOfBirth and dob
     const patient = await userModel.findOne({
       $or: [{ patientId: patientCustomId }, { docId: patientCustomId }],
-    }).select("name email phoneNumber patientId docId dateOfBirth allergies historyList");
+    }).select("name email phoneNumber patientId docId dateOfBirth dob allergies historyList");
 
     if (!patient) {
       return res.status(404).json({ success: false, message: "Patient not found" });
     }
 
-    // Fetch recent diagnoses to construct condensed history
+    // Format Date of Birth safely
+    let formattedDOB = "N/A";
+    const rawDOB = patient.dateOfBirth || patient.dob;
+
+    if (rawDOB) {
+      const parsedDate = new Date(rawDOB);
+      if (!isNaN(parsedDate.getTime())) {
+        formattedDOB = parsedDate.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        }); // Returns DD/MM/YYYY format
+      } else {
+        formattedDOB = String(rawDOB);
+      }
+    }
+
+    // Fetch recent diagnoses to populate condensed history
     const recentDiagnoses = await diagnosisModel
       .find({ patientCustomId })
       .sort({ createdAt: -1 })
@@ -587,7 +605,7 @@ export const getActivePatientSummary = async (req, res) => {
         patientName: patient.name || "N/A",
         patientId: patient.patientId || patient.docId || patientCustomId,
         contact: patient.phoneNumber || patient.email || "N/A",
-        dateOfBirth: patient.dateOfBirth || "N/A",
+        dateOfBirth: formattedDOB,
         allergies: patient.allergies && patient.allergies.length > 0
           ? patient.allergies
           : [

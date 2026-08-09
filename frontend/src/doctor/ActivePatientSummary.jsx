@@ -35,7 +35,9 @@ const ActivePatientSummary = () => {
       }
     } catch (err) {
       console.error("Fetch summary error:", err);
-      setError(err.response?.data?.message || err.message || "Error loading patient summary");
+      setError(
+        err.response?.data?.message || err.message || "Error loading patient summary"
+      );
     } finally {
       setLoading(false);
     }
@@ -74,33 +76,37 @@ const ActivePatientSummary = () => {
         </div>
 
         <div className="grid lg:grid-cols-4 grid-cols-3 w-full gap-4 items-center">
+          {/* Patient Name */}
           <div className="flex flex-col">
             <span className="text-xs font-semibold text-slate-500">Name</span>
             <span className="text-sm font-bold text-slate-800 mt-1">
-              {patient.patientName}
+              {patient.patientName || "N/A"}
             </span>
           </div>
 
+          {/* Patient ID */}
           <div className="flex flex-col">
             <span className="text-xs font-semibold text-slate-500">ID</span>
             <span className="text-sm font-semibold text-slate-700 font-mono mt-1">
-              {patient.patientId}
+              {patient.patientId || patientCustomId}
             </span>
           </div>
 
+          {/* Contact Details */}
           <div className="flex flex-col">
             <span className="text-xs font-semibold text-slate-500">Contact</span>
             <span className="text-sm font-semibold text-slate-700 mt-1">
-              {patient.contact}
+              {patient.contact || "N/A"}
             </span>
           </div>
 
+          {/* Date of Birth */}
           <div className="flex flex-col">
             <span className="text-xs font-semibold text-slate-500">
               Date of Birth
             </span>
             <span className="text-sm font-semibold text-slate-700 mt-1">
-              {patient.dateOfBirth}
+              {patient.dateOfBirth || patient.dob || "N/A"}
             </span>
           </div>
         </div>
