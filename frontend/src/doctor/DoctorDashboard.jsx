@@ -51,7 +51,7 @@ const DoctorDashboard = () => {
         `${backendUrl}/api/doctor/request-access`,
         {
           patientCustomId: searchQuery.trim(),
-        }
+        },
       );
 
       if (data.success) {

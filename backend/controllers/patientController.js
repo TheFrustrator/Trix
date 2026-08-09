@@ -1,6 +1,6 @@
 import accessRequestModel from "../models/accessRequestModel.js";
 
-// Fetch all active/pending requests for logged-in patient
+// Fetch active/pending requests for the patient
 export const getPatientAccessRequests = async (req, res) => {
   try {
     const patientId = req.userId || req.body?.userId;
@@ -9,20 +9,26 @@ export const getPatientAccessRequests = async (req, res) => {
       return res.status(401).json({ success: false, message: "Unauthorized patient account" });
     }
 
-    // Automatically mark expired granted requests in DB
+    const now = new Date();
+
+    // Automatically mark expired granted sessions in DB
     await accessRequestModel.updateMany(
       {
         patientId,
         status: "granted",
-        expiresAt: { $lte: new Date() },
+        expiresAt: { $lte: now },
       },
       { $set: { status: "expired" } }
     );
 
+    // Strictly fetch ONLY pending requests and valid active granted sessions
     const requests = await accessRequestModel
       .find({
         patientId,
-        status: { $in: ["pending", "granted"] },
+        $or: [
+          { status: "pending" },
+          { status: "granted", expiresAt: { $gt: now } },
+        ],
       })
       .populate("doctorId", "name clinicAdd Specialization email")
       .sort({ createdAt: -1 });

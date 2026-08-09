@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useContext, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   PatientIcons,
@@ -6,12 +6,6 @@ import {
 } from "../assets/patientAssests";
 import NavlinkComponent from "../component/NavlinkComponent";
 import UserHeaderCard from "../cards/UserHeaderCard";
-import PendingRequestCard from "../cards/PendingRequestCard";
-import ActiveSessionCard from "../cards/ActiveSessionCard";
-import { AppContext } from "../context/AppContext";
-import { socket } from "../utils/socket";
-import axios from "axios";
-import { toast } from "react-toastify";
 
 // Icons
 import { FiSearch } from "react-icons/fi";
@@ -23,12 +17,6 @@ import { prescriptionsData } from "../assets/doctor";
 function MedicalHistory() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { backendUrl, userData } = useContext(AppContext);
-
-  // Real-time Access Request State
-  const [pendingRequests, setPendingRequests] = useState([]);
-  const [activeSessions, setActiveSessions] = useState([]);
-  const [requestsLoading, setRequestsLoading] = useState(true);
 
   // Prescription History Search & Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -47,105 +35,7 @@ function MedicalHistory() {
     }
   };
 
-  // Fetch requests from backend
-  const fetchAccessRequests = useCallback(async () => {
-    try {
-      axios.defaults.withCredentials = true;
-      const baseUrl = backendUrl?.endsWith("/")
-        ? backendUrl.slice(0, -1)
-        : backendUrl;
-
-      const { data } = await axios.get(`${baseUrl}/api/patient/access-requests`);
-
-      if (data.success && Array.isArray(data.requests)) {
-        const now = new Date();
-        const pending = data.requests.filter((r) => r.status === "pending");
-        const active = data.requests.filter(
-          (r) => r.status === "granted" && new Date(r.expiresAt) > now
-        );
-
-        setPendingRequests(pending);
-        setActiveSessions(active);
-      }
-    } catch (error) {
-      console.error("Failed to fetch access requests:", error);
-    } finally {
-      setRequestsLoading(false);
-    }
-  }, [backendUrl]);
-
-  useEffect(() => {
-    fetchAccessRequests();
-  }, [fetchAccessRequests]);
-
-  // WebSocket listeners
-  useEffect(() => {
-    const patientRoomId = userData?.patientId || userData?.docId;
-    if (!patientRoomId) return;
-
-    if (!socket.connected) {
-      socket.connect();
-    }
-
-    socket.emit("join-patient-room", patientRoomId);
-
-    const handleNewAccessRequest = (newRequest) => {
-      if (newRequest && newRequest._id) {
-        toast.info(
-          `New access request received from ${
-            newRequest.doctorId?.name || "a Healthcare Provider"
-          }`
-        );
-
-        setPendingRequests((prev) => {
-          const exists = prev.some((r) => r._id === newRequest._id);
-          if (exists) return prev;
-          return [newRequest, ...prev];
-        });
-      }
-    };
-
-    socket.on("new-access-request", handleNewAccessRequest);
-
-    return () => {
-      socket.off("new-access-request", handleNewAccessRequest);
-      socket.disconnect();
-    };
-  }, [userData]);
-
-  // Action handlers
-  const handleStatusUpdate = async (requestId, action) => {
-    if (!requestId || typeof requestId !== "string") {
-      return toast.error("Invalid Request ID");
-    }
-
-    try {
-      axios.defaults.withCredentials = true;
-      const baseUrl = backendUrl?.endsWith("/")
-        ? backendUrl.slice(0, -1)
-        : backendUrl;
-
-      const { data } = await axios.post(
-        `${baseUrl}/api/patient/update-request-status`,
-        { requestId, action }
-      );
-
-      if (data.success) {
-        toast.success(data.message || "Request updated successfully");
-        fetchAccessRequests();
-      } else {
-        toast.error(data.message || "Action failed");
-      }
-    } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "An error occurred";
-      toast.error(errorMessage);
-    }
-  };
-
-  // Prescription filtering
+  // Prescription filtering logic
   const filteredPrescriptions = useMemo(() => {
     const term = searchTerm.toLowerCase().trim();
     return prescriptionsData.filter((item) => {
@@ -192,103 +82,8 @@ function MedicalHistory() {
           <UserHeaderCard headerIcon={PatientIcons.userIcon} />
         </div>
 
-        {/* ACCESS REQUESTS MANAGEMENT SECTION */}
-        <div className="w-full flex flex-col gap-4">
-          <h1 className="font-bold lg:text-3xl sm:text-xl text-primary">
-            Access Requests
-          </h1>
-
-          {requestsLoading ? (
-            <div className="py-6 text-center text-slate-500 font-medium">
-              Loading access requests...
-            </div>
-          ) : (
-            <>
-              {/* Pending Requests Container */}
-              {pendingRequests.length === 0 ? (
-                <div className="flex flex-col items-center justify-center border rounded-lg shadow-sm p-6 bg-white mx-1">
-                  <h1 className="font-semibold text-green-500 text-xl mt-2">
-                    You don't have any access requests.
-                  </h1>
-                  <h2 className="font-thin text-gray-500 text-sm mb-2">
-                    Visit nearest clinic to activate
-                  </h2>
-                </div>
-              ) : (
-                <div className="flex flex-col border rounded-md shadow-md mx-1 p-2 bg-white">
-                  <h1 className="text-sm font-semibold text-primary mx-2 mt-1 mb-2">
-                    Pending Requests
-                  </h1>
-                  <div className="flex flex-col gap-2">
-                    {pendingRequests.map((item) => (
-                      <PendingRequestCard
-                        key={item._id}
-                        doctorName={item.doctorId?.name || "Dr. Unknown"}
-                        clinicAdd={
-                          item.doctorId?.clinicAdd || "Clinic Unavailable"
-                        }
-                        requestTime={new Date(
-                          item.createdAt
-                        ).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                        onAcceptHandler={() =>
-                          handleStatusUpdate(item._id, "accept")
-                        }
-                        onDenyHandler={() =>
-                          handleStatusUpdate(item._id, "deny")
-                        }
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Active Sessions Container */}
-              {activeSessions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center border rounded-lg shadow-sm p-6 bg-white mx-1">
-                  <h1 className="font-semibold text-green-500 text-xl mt-2">
-                    You don't have any active session.
-                  </h1>
-                  <h2 className="font-thin text-gray-500 text-sm mb-2">
-                    Visit nearest clinic to activate
-                  </h2>
-                </div>
-              ) : (
-                <div className="flex flex-col border rounded-md shadow-md mx-1 p-2 bg-white">
-                  <div className="flex flex-row py-2 pr-2 justify-between items-center mb-1">
-                    <h1 className="text-lg font-semibold text-primary mx-3 mt-1 mb-0">
-                      Active Sessions
-                    </h1>
-                    <span className="text-xs rounded-full bg-green-500/40 px-3 py-1 flex items-center">
-                      <h2 className="text-green-800 font-semibold">Active</h2>
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    {activeSessions.map((session) => (
-                      <ActiveSessionCard
-                        key={session._id}
-                        doctorName={session.doctorId?.name || "Dr. Unknown"}
-                        clinicAdd={
-                          session.doctorId?.clinicAdd || "Clinic Unavailable"
-                        }
-                        expiresAt={session.expiresAt}
-                        onRevokeHandler={() =>
-                          handleStatusUpdate(session._id, "revoke")
-                        }
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
         {/* PRESCRIPTION HISTORY SECTION */}
-        <div className="w-full flex flex-col gap-6 mt-4">
+        <div className="w-full flex flex-col gap-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -300,6 +95,7 @@ function MedicalHistory() {
               </p>
             </div>
 
+            {/* Stats Overview */}
             <div className="flex items-center bg-white border border-slate-200 rounded-xl px-6 py-3 shadow-xs gap-8 self-start md:self-auto">
               <div className="text-center">
                 <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase block">
@@ -330,6 +126,7 @@ function MedicalHistory() {
             </div>
           </div>
 
+          {/* Search & Filter Bar */}
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <div className="relative flex-1 w-full">
@@ -361,6 +158,7 @@ function MedicalHistory() {
               </div>
             </div>
 
+            {/* Active Filter Chips */}
             <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100 text-sm">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-medium text-slate-400">
@@ -407,6 +205,7 @@ function MedicalHistory() {
             </div>
           </div>
 
+          {/* Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredPrescriptions.map((p) => (
               <div
@@ -490,6 +289,7 @@ function MedicalHistory() {
             ))}
           </div>
 
+          {/* Empty State */}
           {filteredPrescriptions.length === 0 && (
             <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
               <p className="text-slate-500 font-medium">

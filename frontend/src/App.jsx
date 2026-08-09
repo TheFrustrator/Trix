@@ -71,9 +71,10 @@ const App = () => {
         <Route element={<DoctorProtectedRoute />}>
           <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
 
-          {/* <Route path="/patient-prescription/:patientId" element={<ViewPrescriptionPatient />} /> */}
-
-          <Route path="/active-patient" element={<ActivePatient />}>
+          <Route
+            path="/doctor/active-patient/:patientCustomId"
+            element={<ActivePatient />}
+          >
             <Route index element={<Navigate to="summary" replace />} />
             <Route path="summary" element={<ActivePatientSummary />} />
             <Route path="history" element={<ActivePatientHistory />} />

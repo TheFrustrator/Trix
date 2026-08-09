@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import transporter from "../config/nodemailer.js";
 import accessRequestModel from "../models/accessRequestModel.js";
 import userModel from "../models/userModel.js";
+import diagnosisModel from "../models/diagnosisModel.js";
+import prescriptionModel from "../models/prescriptionModel.js";
 
 export const doctorRegister = async (req, res) => {
   const { name, email, password, phoneNumber, clinicAdd, Specialization } = req.body;
@@ -315,7 +317,7 @@ export const createAccessRequest = async (req, res) => {
     let existingRequest = await accessRequestModel.findOne({
       doctorId: docId,
       patientId: patient._id,
-      status: { $in: ["pending", "granted"] },
+      status: "pending",
     });
 
     if (existingRequest) {
@@ -324,7 +326,7 @@ export const createAccessRequest = async (req, res) => {
         .populate("doctorId", "name clinicAdd Specialization");
 
       const io = req.app.get("io");
-      if (io && existingRequest.status === "pending") {
+      if (io) {
         io.to(targetRoomId).emit("new-access-request", {
           _id: populatedExisting._id,
           doctorId: populatedExisting.doctorId,
@@ -340,7 +342,7 @@ export const createAccessRequest = async (req, res) => {
         patientName: patient.name,
         patientCustomId: targetRoomId,
         status: existingRequest.status,
-        message: `Request is currently ${existingRequest.status}`,
+        message: `Request is currently pending`,
       });
     }
 
@@ -375,6 +377,46 @@ export const createAccessRequest = async (req, res) => {
       patientCustomId: targetRoomId,
       status: "pending",
       message: "Access request sent successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Cancel an ongoing pending request from the Doctor side
+export const cancelAccessRequest = async (req, res) => {
+  try {
+    const docId = req.docId || req.body?.docId;
+    const { requestId } = req.body;
+
+    if (!requestId || typeof requestId !== "string") {
+      return res.status(400).json({ success: false, message: "Request ID is required" });
+    }
+
+    const request = await accessRequestModel.findOne({
+      _id: requestId,
+      doctorId: docId,
+      status: "pending",
+    });
+
+    if (!request) {
+      return res.json({ success: false, message: "Pending request not found" });
+    }
+
+    request.status = "cancelled";
+    await request.save();
+
+    // Notify patient room to remove pending request card immediately
+    const io = req.app.get("io");
+    if (io && request.patientCustomId) {
+      io.to(request.patientCustomId).emit("cancel-access-request", {
+        requestId: request._id,
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Access request cancelled successfully",
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -428,5 +470,144 @@ export const getDoctorData = async (req, res) => {
     });
   } catch (error) {
     res.json({ success: false, message: error.message });
+  }
+};
+
+export const saveDiagnosis = async (req, res) => {
+  try {
+    const docId = req.docId || req.body?.docId;
+    const { patientCustomId, diagnosis, notes, date } = req.body;
+
+    if (!docId || !patientCustomId || !diagnosis) {
+      return res.status(400).json({ success: false, message: "Missing required diagnosis details" });
+    }
+
+    const reportPath = req.file ? req.file.path : null;
+
+    const newDiagnosis = new diagnosisModel({
+      doctorId: docId,
+      patientCustomId,
+      diagnosis,
+      notes,
+      reportPath,
+      date: date || new Date().toISOString().split("T")[0],
+    });
+
+    await newDiagnosis.save();
+
+    return res.json({ success: true, message: "Diagnosis saved successfully" });
+  } catch (error) {
+    console.error("saveDiagnosis error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Save Final Prescription
+export const savePrescription = async (req, res) => {
+  try {
+    const docId = req.docId || req.body?.docId;
+    const { patientCustomId, medicines, notes, date } = req.body;
+
+    if (!docId || !patientCustomId || !medicines || !Array.isArray(medicines) || medicines.length === 0) {
+      return res.status(400).json({ success: false, message: "At least one medicine is required" });
+    }
+
+    const newPrescription = new prescriptionModel({
+      doctorId: docId,
+      patientCustomId,
+      medicines,
+      notes,
+      date: date || new Date().toISOString().split("T")[0],
+    });
+
+    await newPrescription.save();
+
+    return res.json({
+      success: true,
+      message: "Prescription submitted successfully",
+      prescriptionId: newPrescription._id,
+    });
+  } catch (error) {
+    console.error("savePrescription error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Fetch Active Session Info & Expiration for Lock Header
+export const getActiveSessionDetails = async (req, res) => {
+  try {
+    const docId = req.docId || req.body?.docId;
+    const { patientCustomId } = req.params;
+
+    const activeSession = await accessRequestModel.findOne({
+      doctorId: docId,
+      patientCustomId,
+      status: "granted",
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!activeSession) {
+      return res.json({ success: false, message: "No active session found or session expired" });
+    }
+
+    return res.json({
+      success: true,
+      expiresAt: activeSession.expiresAt,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getActivePatientSummary = async (req, res) => {
+  try {
+    const { patientCustomId } = req.params;
+
+    if (!patientCustomId || typeof patientCustomId !== "string") {
+      return res.status(400).json({ success: false, message: "Invalid Patient ID" });
+    }
+
+    const patient = await userModel.findOne({
+      $or: [{ patientId: patientCustomId }, { docId: patientCustomId }],
+    }).select("name email phoneNumber patientId docId dateOfBirth allergies historyList");
+
+    if (!patient) {
+      return res.status(404).json({ success: false, message: "Patient not found" });
+    }
+
+    // Fetch recent diagnoses to construct condensed history
+    const recentDiagnoses = await diagnosisModel
+      .find({ patientCustomId })
+      .sort({ createdAt: -1 })
+      .limit(3);
+
+    return res.json({
+      success: true,
+      patient: {
+        patientName: patient.name || "N/A",
+        patientId: patient.patientId || patient.docId || patientCustomId,
+        contact: patient.phoneNumber || patient.email || "N/A",
+        dateOfBirth: patient.dateOfBirth || "N/A",
+        allergies: patient.allergies && patient.allergies.length > 0
+          ? patient.allergies
+          : [
+              { id: "1", name: "Penicillin", severity: "Severe Rash" },
+              { id: "2", name: "Peanuts", severity: "Mild Reaction" },
+            ],
+        condensedHistory: recentDiagnoses.length > 0
+          ? recentDiagnoses.map((d) => ({
+              id: d._id,
+              title: `Recent Visit: ${d.date}`,
+              detail: `Diagnosis: ${d.diagnosis}`,
+            }))
+          : [
+              { id: "h1", title: "Recent Visit", detail: "General Checkup" },
+              { id: "h2", title: "Diagnosis", detail: "Hypertension" },
+            ],
+      },
+    });
+  } catch (error) {
+    console.error("getActivePatientSummary error:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

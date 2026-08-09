@@ -10,7 +10,12 @@ import {
   sendVerifyOtp,
   verifyEmail,
   createAccessRequest,
+  cancelAccessRequest,
   checkAccessRequestStatus,
+  saveDiagnosis,
+  savePrescription,
+  getActiveSessionDetails,
+  getActivePatientSummary,
 } from "../controllers/doctorController.js";
 import doctorAuth from "../middleware/doctorMiddleware.js";
 import upload from "../controllers/multer.js";
@@ -29,12 +34,17 @@ doctorRouter.post("/verify-account", doctorAuth, verifyEmail);
 doctorRouter.get("/is-auth", doctorAuth, isAuthenticated);
 doctorRouter.post("/send-reset-otp", sendResetOtp);
 doctorRouter.post("/reset-password", resetPassword);
+
+// Doctor Access Requests & Medical Records
 doctorRouter.post("/request-access", doctorAuth, createAccessRequest);
-doctorRouter.get(
-  "/check-request-status/:requestId",
-  doctorAuth,
-  checkAccessRequestStatus
-);
+doctorRouter.post("/cancel-access-request", doctorAuth, cancelAccessRequest);
+doctorRouter.get("/check-request-status/:requestId", doctorAuth, checkAccessRequestStatus);
+doctorRouter.get("/active-session/:patientCustomId", doctorAuth, getActiveSessionDetails);
+doctorRouter.get("/patient-summary/:patientCustomId", doctorAuth, getActivePatientSummary);
+
+doctorRouter.post("/save-diagnosis", doctorAuth, upload.single("report"), saveDiagnosis);
+doctorRouter.post("/save-prescription", doctorAuth, savePrescription);
+
 doctorRouter.get("/doctor-data", doctorAuth, getDoctorData);
 
 export default doctorRouter;
