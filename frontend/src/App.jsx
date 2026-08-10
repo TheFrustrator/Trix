@@ -27,6 +27,9 @@ import {
   DoctorProtectedRoute,
   ProtectedRoute,
 } from "./component/ProtectedRoute";
+import PharmacyEmailVerify from "./pages/PharmacyEmailVerify";
+import PharmacyForgetPassword from "./pages/PharmacyForgetPassword";
+import PharmacyProtectedRoute from "./component/PharmacyProtectedRoute";
 
 const App = () => {
   return (
@@ -49,19 +52,29 @@ const App = () => {
         {/* Patient Protected Controls */}
         <Route element={<ProtectedRoute />}>
           <Route path="/patient-dashboard" element={<PatientDashboard />} />
-          <Route
-            path="/patient-medical-history"
-            element={<MedicalHistory />}
-          />
+          <Route path="/patient-medical-history" element={<MedicalHistory />} />
           <Route path="/acess-request" element={<AccessRequest />} />
         </Route>
 
-        {/* Pharmacy Controls */}
-        <Route path="/pharmacy" element={<PharmacyDashboard />} />
         <Route
-          path="/pharmacy-prescription-view"
-          element={<PrescriptionView />}
+          path="/pharmacy-email-verify"
+          element={<PharmacyEmailVerify />}
         />
+
+        <Route
+          path="/pharmacy-forget-password"
+          element={<PharmacyForgetPassword />}
+        />
+
+        {/* Pharmacy Controls */}
+        <Route element={<PharmacyProtectedRoute />}>
+          <Route path="/pharmacy-dashboard" element={<PharmacyDashboard />} />
+
+          <Route
+            path="/pharmacy-prescription-view"
+            element={<PrescriptionView />}
+          />
+        </Route>
 
         {/* Doctor Protected Controls */}
         <Route element={<DoctorProtectedRoute />}>
@@ -81,7 +94,7 @@ const App = () => {
         </Route>
 
         {/* PDF Prescription Routes */}
-        <Route path="/prescription-view" element={<PdfPrescriptionView />} />
+        <Route path="/prescription-view" element={<PrescriptionView />} />
         <Route
           path="/prescription-view/:prescriptionId"
           element={<PdfPrescriptionView />}

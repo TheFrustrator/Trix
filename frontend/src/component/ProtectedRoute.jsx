@@ -2,43 +2,54 @@ import React, { useContext } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 
-// Patient Route Guard
 export const ProtectedRoute = () => {
   const { isLoggedin, userData, loading } = useContext(AppContext);
 
-  // 1. Wait if AppContext is still checking authentication or fetching user profile
+  // IMPORTANT:
+  // Don't redirect while authentication is being restored.
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-slate-600 font-medium">
-        Authenticating session...
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+
+          <p className="text-gray-600">
+            Authenticating session...
+          </p>
+        </div>
       </div>
     );
   }
 
-  // 2. Redirect ONLY if checks have finished AND the user is not authenticated/found
+  // Authentication check has finished
   if (!isLoggedin || !userData) {
-    return <Navigate to="/patient-login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;
 };
 
-// Doctor Route Guard
+
 export const DoctorProtectedRoute = () => {
   const { isLoggedin, doctorData, loading } = useContext(AppContext);
 
-  // 1. Wait if AppContext is still checking authentication or fetching doctor profile
+  // Don't redirect until authentication restoration is complete
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-slate-600 font-medium">
-        Authenticating doctor session...
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+
+          <p className="text-gray-600">
+            Authenticating doctor session...
+          </p>
+        </div>
       </div>
     );
   }
 
-  // 2. Redirect ONLY if checks have finished AND doctor profile is missing
   if (!isLoggedin || !doctorData) {
-    return <Navigate to="/doctor-login" replace />;
+    return <Navigate to="/doctor/login" replace />;
   }
 
   return <Outlet />;

@@ -10,6 +10,7 @@ import authRouter from "./routes/authRoute.js";
 import userRouter from "./routes/userRoute.js";
 import doctorRouter from "./routes/doctorRoute.js";
 import patientRouter from "./routes/patientRoute.js";
+import pharmacyRouter from "./routes/pharmacyRoute.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -57,6 +58,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/doctor", doctorRouter);
 app.use("/api/patient", patientRouter);
+app.use("/api/pharmacy", pharmacyRouter);
 
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

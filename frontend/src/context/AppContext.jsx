@@ -1,120 +1,314 @@
 import axios from "axios";
-import { createContext, useCallback, useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
 export const AppContext = createContext();
 
 export const AppContextProvider = (props) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const [isLoggedin, setIsLOggedin] = useState(false);
-  const [userData, setUserData] = useState(false);
-  const [doctorData, setDoctorData] = useState(false);
-  const [loading, setLoading] = useState(true)
-  const [activePatientCustomId, setActivePatientCustomId] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [doctorData, setDoctorData] = useState(null);
+  const [pharmacyData, setPharmacyData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activePatientCustomId, setActivePatientCustomId] =
+    useState(null);
+  const baseUrl = backendUrl?.endsWith("/")
+    ? backendUrl.slice(0, -1)
+    : backendUrl;
 
-  // Send cookies with Axios requests
+  // Send cookies with every axios request
   axios.defaults.withCredentials = true;
 
-  const getAuthState = async () => {
-    try {
-      const { data } = await axios.get(backendUrl + "/api/auth/is-auth");
-      if (data.success) {
-        setIsLOggedin(true);
-        // Try fetching both or load according to account type
-        getUserData();
-        getDoctorData();
-      }
-    } catch (error) {
-      setIsLOggedin(false);
-      console.error("Auth state error:", error.message);
-    }finally {
-      setLoading(false); // End loading when check finishes
-    }
-  };
-
-  // User data fetch 
   const getUserData = async () => {
     try {
-      const baseUrl = backendUrl?.endsWith("/")
-        ? backendUrl.slice(0, -1)
-        : backendUrl;
-
-      const { data } = await axios.get(`${baseUrl}/api/user/data`);
-
+      const { data } = await axios.get(
+        `${baseUrl}/api/user/data`
+      );
       if (data.success) {
         setUserData(data.userData);
-        setIsLOggedin(true);
-      } else {
-        // Log quietly instead of throwing toast.error("User not found") 
-        // when logged in as a Doctor
-        console.log("User profile check:", data.message);
+        return true;
       }
+      setUserData(null);
+      return false;
     } catch (error) {
-      console.error("Error fetching user data:", error.message);
+      setUserData(null);
+
+      console.log(
+        "User session:",
+        error.response?.data?.message || error.message
+      );
+
+      return false;
     }
   };
 
-  // Doctor data fetch
+
   const getDoctorData = async () => {
     try {
-      const baseUrl = backendUrl?.endsWith("/")
-        ? backendUrl.slice(0, -1)
-        : backendUrl;
-
-      const { data } = await axios.get(`${baseUrl}/api/doctor/doctor-data`);
+      const { data } = await axios.get(
+        `${baseUrl}/api/doctor/doctor-data`
+      );
 
       if (data.success) {
-        setDoctorData(data.userData);
-        setIsLOggedin(true);
-      } else {
-        // Log quietly instead of throwing toast.error("User not found") 
-        // when logged in as a Patient/User
-        console.log("Doctor profile check:", data.message);
+        setDoctorData(data.userData || data.doctorData);
+        return true;
       }
+
+      setDoctorData(null);
+      return false;
     } catch (error) {
-      console.error("Error fetching doctor data:", error.message);
+      setDoctorData(null);
+
+      console.log(
+        "Doctor session:",
+        error.response?.data?.message || error.message
+      );
+
+      return false;
+    }
+  };
+
+
+
+  const getPharmacyData = async () => {
+    try {
+      const { data } = await axios.get(
+        `${baseUrl}/api/pharmacy/pharmacy-data`
+      );
+
+      if (data.success) {
+        setPharmacyData(
+          data.pharmacyData ||
+            data.userData ||
+            data.data
+        );
+
+        return true;
+      }
+
+      setPharmacyData(null);
+      return false;
+    } catch (error) {
+      setPharmacyData(null);
+
+      console.log(
+        "Pharmacy session:",
+        error.response?.data?.message || error.message
+      );
+
+      return false;
+    }
+  };
+
+
+
+  const restoreSession = async () => {
+    setLoading(true);
+
+    try {
+      // Check patient
+      const userLoggedIn = await getUserData();
+
+      if (userLoggedIn) {
+        setIsLOggedin(true);
+        return;
+      }
+
+      // Check doctor
+      const doctorLoggedIn = await getDoctorData();
+
+      if (doctorLoggedIn) {
+        setIsLOggedin(true);
+        return;
+      }
+
+      // Check pharmacy
+      const pharmacyLoggedIn = await getPharmacyData();
+
+      if (pharmacyLoggedIn) {
+        setIsLOggedin(true);
+        return;
+      }
+
+      // Nobody authenticated
+      setIsLOggedin(false);
+
+      setUserData(null);
+      setDoctorData(null);
+      setPharmacyData(null);
+    } catch (error) {
+      console.error(
+        "Session restoration failed:",
+        error
+      );
+
+      setIsLOggedin(false);
+
+      setUserData(null);
+      setDoctorData(null);
+      setPharmacyData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
+    restoreSession();
+  }, []);
+
+
+  const loginSuccess = async () => {
+    setLoading(true);
+
+    try {
+      const success = await getUserData();
+
+      if (success) {
+        setIsLOggedin(true);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const doctorLoginSuccess = async () => {
+    setLoading(true);
+
+    try {
+      const success = await getDoctorData();
+
+      if (success) {
+        setIsLOggedin(true);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const pharmacyLoginSuccess = async () => {
+    setLoading(true);
+
+    try {
+      const success = await getPharmacyData();
+
+      if (success) {
+        setIsLOggedin(true);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const logout = async () => {
+    try {
+      await axios.post(
+        `${baseUrl}/api/auth/logout`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+    } catch (error) {
+      console.error(
+        "Logout error:",
+        error.response?.data || error.message
+      );
+    } finally {
+      setIsLOggedin(false);
+
+      setUserData(null);
+      setDoctorData(null);
+      setPharmacyData(null);
+    }
+  };
+
+  const pharmacyLogout = async () => {
+    try {
+      await axios.post(
+        `${baseUrl}/api/pharmacy/logout`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+    } catch (error) {
+      console.error(
+        "Pharmacy logout error:",
+        error.response?.data || error.message
+      );
+    } finally {
+      setIsLOggedin(false);
+      setPharmacyData(null);
     }
   };
 
   const checkActiveSession = useCallback(async () => {
     try {
-      axios.defaults.withCredentials = true;
-      const baseUrl = backendUrl.endsWith("/") ? backendUrl.slice(0, -1) : backendUrl;
-      const { data } = await axios.get(`${baseUrl}/api/doctor/current-active-session`);
+      const { data } = await axios.get(
+        `${baseUrl}/api/doctor/current-active-session`
+      );
 
       if (data.success && data.patientCustomId) {
-        setActivePatientCustomId(data.patientCustomId);
+        setActivePatientCustomId(
+          data.patientCustomId
+        );
       } else {
         setActivePatientCustomId(null);
       }
     } catch (error) {
-      console.error("Error checking active session:", error);
+      console.error(
+        "Error checking active session:",
+        error
+      );
+
       setActivePatientCustomId(null);
     }
-  }, [backendUrl]);
-
-  // Fetch authentication/user status on initial application load
-  useEffect(() => {
-    getUserData();
-    getDoctorData();
-  }, []);
+  }, [baseUrl]);
 
   const value = {
     backendUrl,
+
     isLoggedin,
     setIsLOggedin,
+
     userData,
+    setUserData,
+
     doctorData,
     setDoctorData,
+
+    pharmacyData,
+    setPharmacyData,
+
+    loading,
+    setLoading,
+
     getUserData,
-    getAuthState,
     getDoctorData,
+    getPharmacyData,
+
+    loginSuccess,
+    doctorLoginSuccess,
+    pharmacyLoginSuccess,
+
+    logout,
+    pharmacyLogout,
+
     activePatientCustomId,
     setActivePatientCustomId,
     checkActiveSession,
   };
 
   return (
-    <AppContext.Provider value={value}>{props.children}</AppContext.Provider>
+    <AppContext.Provider value={value}>
+      {props.children}
+    </AppContext.Provider>
   );
 };
