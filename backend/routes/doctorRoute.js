@@ -24,7 +24,7 @@ import {
   savePrescription,
   getCombinedPrescriptionDetails,
   getPrescriptionsByPatientId,
-} from "../controllers/pdfController.js"; // ✅ single source for all prescription routes
+} from "../controllers/pdfController.js"; 
 
 const doctorRouter = express.Router();
 

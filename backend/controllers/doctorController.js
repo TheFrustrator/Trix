@@ -523,11 +523,7 @@ export const saveDiagnosis = async (req, res) => {
   }
 };
 
-// NOTE: savePrescription, getPrescriptionDetails, and getPrescriptionsByPatientId
-// used to live here and wrote to a *different* model (prescriptionModel) than the
-// one the PDF view reads from (prescriptionPdfModel). That mismatch was the root
-// cause of the blank PDF. All prescription save/fetch logic now lives exclusively
-// in pdfController.js — do not re-add prescription functions here.
+
 
 // Fetch Active Session Info & Expiration for Lock Header
 export const getActiveSessionDetails = async (req, res) => {

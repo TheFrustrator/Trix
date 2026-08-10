@@ -8,6 +8,9 @@ import {
   sendResetOtp,
   sendVerifyOtp,
   verifyEmail,
+  getDashboardSummary,
+  getPatientPrescriptions,
+  getPatientPrescriptionDetails,
 } from "../controllers/authController.js";
 import userAuth from "../middleware/userAuth.js";
 
@@ -21,5 +24,12 @@ authRouter.post("/verify-account", userAuth, verifyEmail);
 authRouter.get("/is-auth", userAuth, isAuthenticated);
 authRouter.post("/send-reset-otp", sendResetOtp);
 authRouter.post("/reset-password", resetPassword);
+
+// Patient dashboard data
+authRouter.get("/dashboard-summary", userAuth, getDashboardSummary);
+
+// Patient prescription history
+authRouter.get("/prescriptions", userAuth, getPatientPrescriptions);
+authRouter.get("/prescription-details/:prescriptionId", userAuth, getPatientPrescriptionDetails);
 
 export default authRouter;
