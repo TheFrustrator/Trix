@@ -13,18 +13,18 @@ import {
   cancelAccessRequest,
   checkAccessRequestStatus,
   saveDiagnosis,
-  savePrescription,
   getActiveSessionDetails,
   getActivePatientSummary,
   getRecentPatients,
   getCurrentActiveSession,
-  getPrescriptionsByPatientId,
-  getPrescriptionDetails,
 } from "../controllers/doctorController.js";
 import doctorAuth from "../middleware/doctorMiddleware.js";
 import upload from "../controllers/multer.js";
-
-
+import {
+  savePrescription,
+  getCombinedPrescriptionDetails,
+  getPrescriptionsByPatientId,
+} from "../controllers/pdfController.js"; // ✅ single source for all prescription routes
 
 const doctorRouter = express.Router();
 
@@ -51,17 +51,11 @@ doctorRouter.get("/recent-patients", doctorAuth, getRecentPatients);
 doctorRouter.get("/current-active-session", doctorAuth, getCurrentActiveSession);
 
 doctorRouter.post("/save-diagnosis", doctorAuth, upload.single("report"), saveDiagnosis);
+
+// Prescription routes — all backed by prescriptionPdfModel via pdfController.js
 doctorRouter.post("/save-prescription", doctorAuth, savePrescription);
-doctorRouter.get(
-  "/prescription-details/:prescriptionId",
-  doctorAuth,
-  getPrescriptionDetails
-);
-doctorRouter.get(
-  "/patient-prescriptions/:patientCustomId",
-  doctorAuth,
-  getPrescriptionsByPatientId
-);
+doctorRouter.get("/prescription-details/:prescriptionId", doctorAuth, getCombinedPrescriptionDetails);
+doctorRouter.get("/patient-prescriptions/:patientCustomId", doctorAuth, getPrescriptionsByPatientId);
 
 doctorRouter.get("/doctor-data", doctorAuth, getDoctorData);
 

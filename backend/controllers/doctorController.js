@@ -5,10 +5,7 @@ import transporter from "../config/nodemailer.js";
 import accessRequestModel from "../models/accessRequestModel.js";
 import userModel from "../models/userModel.js";
 import diagnosisModel from "../models/diagnosisModel.js";
-import prescriptionModel from "../models/prescriptionModel.js";
-import prescriptionPdfModel from "../models/prescriptionPdfModel.js";
 import recentPatientModel from "../models/recentPatientModel.js";
-import mongoose from "mongoose";
 
 export const doctorRegister = async (req, res) => {
   const { name, email, password, phoneNumber, clinicAdd, Specialization } =
@@ -318,9 +315,7 @@ export const createAccessRequest = async (req, res) => {
 
     const sanitizedCustomId = patientCustomId.trim();
 
-    const patient = await userModel.findOne({
-      $or: [{ patientId: sanitizedCustomId }, { docId: sanitizedCustomId }],
-    });
+    const patient = await userModel.findOne({ patientId: sanitizedCustomId });
 
     if (!patient) {
       return res.json({
@@ -329,7 +324,7 @@ export const createAccessRequest = async (req, res) => {
       });
     }
 
-    const targetRoomId = patient.patientId || patient.docId;
+    const targetRoomId = patient.patientId;
 
     let existingRequest = await accessRequestModel.findOne({
       doctorId: docId,
@@ -528,44 +523,11 @@ export const saveDiagnosis = async (req, res) => {
   }
 };
 
-// Save Final Prescription
-export const savePrescription = async (req, res) => {
-  try {
-    const docId = req.docId || req.body?.docId;
-    const { patientCustomId, medicines, notes, date } = req.body;
-
-    if (
-      !docId ||
-      !patientCustomId ||
-      !medicines ||
-      !Array.isArray(medicines) ||
-      medicines.length === 0
-    ) {
-      return res
-        .status(400)
-        .json({ success: false, message: "At least one medicine is required" });
-    }
-
-    const newPrescription = new prescriptionModel({
-      doctorId: docId,
-      patientCustomId,
-      medicines,
-      notes,
-      date: date || new Date().toISOString().split("T")[0],
-    });
-
-    await newPrescription.save();
-
-    return res.json({
-      success: true,
-      message: "Prescription submitted successfully",
-      prescriptionId: newPrescription._id,
-    });
-  } catch (error) {
-    console.error("savePrescription error:", error);
-    return res.status(500).json({ success: false, message: error.message });
-  }
-};
+// NOTE: savePrescription, getPrescriptionDetails, and getPrescriptionsByPatientId
+// used to live here and wrote to a *different* model (prescriptionModel) than the
+// one the PDF view reads from (prescriptionPdfModel). That mismatch was the root
+// cause of the blank PDF. All prescription save/fetch logic now lives exclusively
+// in pdfController.js — do not re-add prescription functions here.
 
 // Fetch Active Session Info & Expiration for Lock Header
 export const getActiveSessionDetails = async (req, res) => {
@@ -606,14 +568,10 @@ export const getActivePatientSummary = async (req, res) => {
         .json({ success: false, message: "Invalid Patient ID" });
     }
 
-    // Explicitly query for dateOfBirth and dob
+    // userModel's DOB field is `dob` — that's the only birth-date field on the schema.
     const patient = await userModel
-      .findOne({
-        $or: [{ patientId: patientCustomId }, { docId: patientCustomId }],
-      })
-      .select(
-        "name email phoneNumber patientId docId dateOfBirth dob allergies historyList",
-      );
+      .findOne({ patientId: patientCustomId })
+      .select("name email phoneNumber patientId dob allergies historyList");
 
     if (!patient) {
       return res
@@ -623,18 +581,16 @@ export const getActivePatientSummary = async (req, res) => {
 
     // Format Date of Birth safely
     let formattedDOB = "N/A";
-    const rawDOB = patient.dateOfBirth || patient.dob;
-
-    if (rawDOB) {
-      const parsedDate = new Date(rawDOB);
+    if (patient.dob) {
+      const parsedDate = new Date(patient.dob);
       if (!isNaN(parsedDate.getTime())) {
         formattedDOB = parsedDate.toLocaleDateString("en-GB", {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
-        }); // Returns DD/MM/YYYY format
+        }); // DD/MM/YYYY
       } else {
-        formattedDOB = String(rawDOB);
+        formattedDOB = String(patient.dob);
       }
     }
 
@@ -648,7 +604,7 @@ export const getActivePatientSummary = async (req, res) => {
       success: true,
       patient: {
         patientName: patient.name || "N/A",
-        patientId: patient.patientId || patient.docId || patientCustomId,
+        patientId: patient.patientId || patientCustomId,
         contact: patient.phoneNumber || patient.email || "N/A",
         dateOfBirth: formattedDOB,
         allergies:
@@ -715,15 +671,12 @@ export const getRecentPatients = async (req, res) => {
       .find({ doctorId: docId })
       .sort({ lastVisitDate: -1, updatedAt: -1 })
       .limit(6)
-      .populate("patientId", "name patientId docId");
+      .populate("patientId", "name patientId");
 
     const formattedList = patients.map((item) => ({
       _id: item._id,
       patientName: item.patientName || item.patientId?.name || "Patient",
-      patientCustomId:
-        item.patientCustomId ||
-        item.patientId?.patientId ||
-        item.patientId?.docId,
+      patientCustomId: item.patientCustomId || item.patientId?.patientId,
       lastVisitDate: new Date(item.lastVisitDate).toLocaleDateString("en-GB", {
         day: "2-digit",
         month: "short",
@@ -777,95 +730,6 @@ export const getCurrentActiveSession = async (req, res) => {
     });
   } catch (error) {
     console.error("getCurrentActiveSession error:", error);
-    return res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-export const getPrescriptionsByPatientId = async (req, res) => {
-  try {
-    const { patientCustomId } = req.params;
-
-    const prescriptions = await prescriptionPdfModel
-      .find({ patientCustomId })
-      .populate("doctorId", "name clinicAdd Specialization")
-      .sort({ createdAt: -1 });
-
-    return res.json({
-      success: true,
-      prescriptions,
-    });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-export const getPrescriptionDetails = async (req, res) => {
-  try {
-    const { prescriptionId } = req.params;
-
-    if (!prescriptionId || typeof prescriptionId !== "string") {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid prescription ID" });
-    }
-
-    let rx = null;
-
-    // Safely check if the ID is a valid MongoDB ObjectId (24 hex characters)
-    if (mongoose.Types.ObjectId.isValid(prescriptionId)) {
-      rx = await prescriptionPdfModel
-        .findById(prescriptionId)
-        .populate(
-          "doctorId",
-          "name clinicAdd Specialization phoneNumber regNo",
-        );
-    }
-    // If not a standard ObjectId, try searching by the custom RX- string
-    else {
-      rx = await prescriptionPdfModel
-        .findOne({ prescriptionCustomId: prescriptionId })
-        .populate(
-          "doctorId",
-          "name clinicAdd Specialization phoneNumber regNo",
-        );
-    }
-
-    if (!rx) {
-      return res.status(404).json({
-        success: false,
-        message: "Prescription record not found in database",
-      });
-    }
-
-    return res.json({
-      success: true,
-      prescriptionData: {
-        id: rx._id,
-        prescriptionCustomId: rx.prescriptionCustomId,
-        pdfFileName: rx.pdfFileName,
-        dateIssued: rx.issueDate,
-        validUntil: rx.validUntilDate,
-        doctor: {
-          name: rx.doctorId?.name || "Dr. Eleanor Vance",
-          specialization: rx.doctorId?.Specialization || "MBBS, MD",
-          clinic: rx.doctorId?.clinicAdd || "Oakwood Clinic",
-          regNo: rx.doctorId?.regNo || "12345",
-          address: rx.doctorId?.clinicAdd || "123 Oakwood Ave, Cityville",
-          phone: rx.doctorId?.phoneNumber || "(555) 0123",
-        },
-        patient: {
-          name: rx.patientName || "Patient",
-          id: rx.patientCustomId || "P-4041-XYZ",
-          ageGender: rx.patientAgeGender || "34 / Female",
-        },
-        diagnosis: rx.diagnosis || "General Consultation",
-        medicines: rx.medicines || [],
-        notes: rx.notes || "",
-        status: rx.status || "ACTIVE",
-      },
-    });
-  } catch (error) {
-    console.error("getPrescriptionDetails error:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
