@@ -2,41 +2,43 @@ import React, { useContext } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 
-// Wrapper for general authenticated & verified routes
+// Patient Route Guard
 export const ProtectedRoute = () => {
-  const { isLoggedin, userData, doctorData } = useContext(AppContext);
+  const { isLoggedin, userData, loading } = useContext(AppContext);
 
-  // 1. Check if user/doctor is logged in
-  if (!isLoggedin) {
+  // 1. Wait if AppContext is still checking authentication or fetching user profile
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-slate-600 font-medium">
+        Authenticating session...
+      </div>
+    );
+  }
+
+  // 2. Redirect ONLY if checks have finished AND the user is not authenticated/found
+  if (!isLoggedin || !userData) {
     return <Navigate to="/patient-login" replace />;
   }
 
-  // 2. Check account verification status
-  const currentUser = userData || doctorData;
-  
-  if (currentUser && !currentUser.isVerified) {
-    return <Navigate to="/email-verify" replace />;
-  }
-
-  // If authenticated and verified, render child routes
   return <Outlet />;
 };
 
-// Wrapper for Doctor-only routes
+// Doctor Route Guard
 export const DoctorProtectedRoute = () => {
-  const { isLoggedin, doctorData } = useContext(AppContext);
+  const { isLoggedin, doctorData, loading } = useContext(AppContext);
 
-  if (!isLoggedin) {
+  // 1. Wait if AppContext is still checking authentication or fetching doctor profile
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-slate-600 font-medium">
+        Authenticating doctor session...
+      </div>
+    );
+  }
+
+  // 2. Redirect ONLY if checks have finished AND doctor profile is missing
+  if (!isLoggedin || !doctorData) {
     return <Navigate to="/doctor-login" replace />;
-  }
-
-  if (!doctorData) {
-    // Logged in, but not a doctor account
-    return <Navigate to="/" replace />;
-  }
-
-  if (!doctorData.isVerified) {
-    return <Navigate to="/email-verify" replace />;
   }
 
   return <Outlet />;

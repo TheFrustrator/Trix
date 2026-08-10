@@ -104,7 +104,6 @@ export const AppContextProvider = (props) => {
     isLoggedin,
     setIsLOggedin,
     userData,
-    setUserData,
     doctorData,
     setDoctorData,
     getUserData,

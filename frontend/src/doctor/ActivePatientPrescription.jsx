@@ -26,6 +26,7 @@ const ActivePatientPrescription = () => {
   const [prescriptionNotes, setPrescriptionNotes] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [savedRxId, setSavedRxId] = useState(null);
 
   const options = ["Once", "Twice", "Thrice a day"];
   const frequencyMap = { Once: 1, Twice: 2, "Thrice a day": 3 };
@@ -71,6 +72,10 @@ const ActivePatientPrescription = () => {
       return toast.error("Please add at least one medicine item.");
     }
 
+    if (!patientCustomId) {
+      return toast.error("Patient ID missing in URL path");
+    }
+
     try {
       setSubmitting(true);
       axios.defaults.withCredentials = true;
@@ -83,13 +88,15 @@ const ActivePatientPrescription = () => {
         date,
       });
 
-      if (data.success) {
+      if (data.success && data.prescriptionId) {
+        setSavedRxId(data.prescriptionId);
+        toast.success("Prescription saved to database!");
         setIsModalOpen(true);
       } else {
-        toast.error(data.message || "Failed to submit prescription");
+        toast.error(data.message || "Failed to save prescription");
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message);
+      toast.error(err.response?.data?.message || err.message || "Submission failed");
     } finally {
       setSubmitting(false);
     }
@@ -158,8 +165,16 @@ const ActivePatientPrescription = () => {
                   onClick={() => setFrequency(option)}
                   className="flex items-center gap-2 cursor-pointer select-none text-xs"
                 >
-                  <div className={`w-8 h-4 flex items-center rounded-full p-0.5 transition-colors ${isSelected ? "bg-blue-500" : "bg-gray-300"}`}>
-                    <div className={`bg-white w-3 h-3 rounded-full shadow-md transform transition-transform ${isSelected ? "translate-x-3.5" : "translate-x-0"}`} />
+                  <div
+                    className={`w-8 h-4 flex items-center rounded-full p-0.5 transition-colors ${
+                      isSelected ? "bg-blue-500" : "bg-gray-300"
+                    }`}
+                  >
+                    <div
+                      className={`bg-white w-3 h-3 rounded-full shadow-md transform transition-transform ${
+                        isSelected ? "translate-x-3.5" : "translate-x-0"
+                      }`}
+                    />
                   </div>
                   <span className="font-medium text-slate-800">{option}</span>
                 </label>
@@ -177,7 +192,9 @@ const ActivePatientPrescription = () => {
                 type="button"
                 onClick={() => setTiming(option)}
                 className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all cursor-pointer ${
-                  timing === option ? "bg-blue-500 text-white shadow-xs" : "bg-blue-50 text-slate-700 hover:bg-blue-100"
+                  timing === option
+                    ? "bg-blue-500 text-white shadow-xs"
+                    : "bg-blue-50 text-slate-700 hover:bg-blue-100"
                 }`}
               >
                 {option}
@@ -272,7 +289,7 @@ const ActivePatientPrescription = () => {
               type="button"
               disabled={submitting}
               onClick={handleSubmitPrescription}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold text-xs py-2.5 rounded-xl cursor-pointer shadow-xs"
+              className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold text-xs py-2.5 rounded-xl cursor-pointer shadow-xs"
             >
               {submitting ? "Submitting..." : "Submit Final Prescription"}
             </button>
@@ -292,20 +309,16 @@ const ActivePatientPrescription = () => {
               Prescription Submitted Successfully
             </h2>
 
-            <div className="flex flex-row items-center gap-4 bg-slate-50 border border-gray-200 rounded-2xl p-3 w-full mb-6">
-              <div className="flex flex-col text-left justify-center text-xs">
-                <p className="font-semibold text-slate-800">
-                  Patient ID: <span className="font-medium text-slate-700">{patientCustomId}</span>
-                </p>
-                <p className="font-semibold text-slate-800 mt-1">
-                  Issued Date: <span className="font-medium text-slate-700">{date}</span>
-                </p>
-              </div>
-            </div>
-
             <div className="flex flex-row gap-3 w-full">
               <button
-                onClick={() => navigate("/prescription-view")}
+                type="button"
+                onClick={() => {
+                  if (savedRxId) {
+                    navigate(`/prescription-view/${savedRxId}`);
+                  } else {
+                    navigate("/prescription-view");
+                  }
+                }}
                 className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-xs shadow-xs cursor-pointer"
               >
                 <FaRegFilePdf size={14} />

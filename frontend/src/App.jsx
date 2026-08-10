@@ -1,7 +1,6 @@
 import React from "react";
-import { Icons } from "./assets/assets";
+import { Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./component/LandingPage";
-import { Route, Routes, Navigate, BrowserRouter } from "react-router-dom";
 import ChooseSighUp from "./component/ChooseSighUp";
 import PatientLogin from "./pages/PatientLogin";
 import DoctorLogin from "./pages/DoctorLogin";
@@ -11,22 +10,19 @@ import DoctorSignUp from "./pages/DoctorSignUp";
 import PharmacySignUp from "./pages/PharmacySignUp";
 import PatientDashboard from "./paitent/PatientDashboard";
 import MedicalHistory from "./paitent/MedicalHistory";
-
 import AccessRequest from "./paitent/AccessRequest";
-
 import PharmacyDashboard from "./pharmacy/PharmacyDashboard";
 import PrescriptionView from "./pharmacy/PrescriptionView";
 import DoctorDashboard from "./doctor/DoctorDashboard";
-
 import ActivePatient from "./doctor/ActivePatient";
-
 import ActivePatientSummary from "./doctor/ActivePatientSummary";
 import ActivePatientHistory from "./doctor/ActivePatientHistory";
 import ActivePatientPrescription from "./doctor/ActivePatientPrescription";
 import PdfPrescriptionView from "./doctor/PdfPrescriptionView";
 import EmailVerify from "./pages/EmailVerify";
-import { ToastContainer, toast } from "react-toastify";
+import PatientEmailVerify from "./pages/PatientEmailVerify";
 import ForgetPassword from "./pages/ForgetPassword";
+import { ToastContainer } from "react-toastify";
 import {
   DoctorProtectedRoute,
   ProtectedRoute,
@@ -34,17 +30,13 @@ import {
 
 const App = () => {
   return (
-    <div className="">
+    <div>
       <ToastContainer />
-
-      {/* <div className="flex ml-[86%]  bg-blue-100 rounded-full w-36 h-36" ></div>
-        <div className="flex ml-[-1.8%] bg-blue-100 rounded-full w-14 h-14" ></div>
-        <div className="flex mt-5 ml-[-1.8%] bg-gray-200 rounded-full w-40 h-40" ></div> */}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/choosesignup" element={<ChooseSighUp />} />
 
-        {/* login  */}
+        {/* Login */}
         <Route path="/patient-login" element={<PatientLogin />} />
         <Route path="/doctor-login" element={<DoctorLogin />} />
         <Route path="/pharmacy-login" element={<PharmacyLogin />} />
@@ -54,23 +46,26 @@ const App = () => {
         <Route path="/doctor-signup" element={<DoctorSignUp />} />
         <Route path="/pharmacy-signup" element={<PharmacySignUp />} />
 
-        {/* patient control  */}
+        {/* Patient Protected Controls */}
         <Route element={<ProtectedRoute />}>
           <Route path="/patient-dashboard" element={<PatientDashboard />} />
-          <Route path="/patient-medical-history" element={<MedicalHistory />} />
+          <Route
+            path="/patient-medical-history"
+            element={<MedicalHistory />}
+          />
           <Route path="/acess-request" element={<AccessRequest />} />
         </Route>
-        {/* pharmacy control  */}
+
+        {/* Pharmacy Controls */}
         <Route path="/pharmacy" element={<PharmacyDashboard />} />
         <Route
           path="/pharmacy-prescription-view"
           element={<PrescriptionView />}
         />
 
-        {/* Doctor component */}
+        {/* Doctor Protected Controls */}
         <Route element={<DoctorProtectedRoute />}>
           <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
-
           <Route
             path="/doctor/active-patient/:patientCustomId"
             element={<ActivePatient />}
@@ -84,9 +79,17 @@ const App = () => {
             />
           </Route>
         </Route>
-        <Route path="/prescription-view" element={<PdfPrescriptionView />} />
 
+        {/* PDF Prescription Routes */}
+        <Route path="/prescription-view" element={<PdfPrescriptionView />} />
+        <Route
+          path="/prescription-view/:prescriptionId"
+          element={<PdfPrescriptionView />}
+        />
+
+        {/* Verification & Auth */}
         <Route path="/email-verify" element={<EmailVerify />} />
+        <Route path="/patient-email-verify" element={<PatientEmailVerify />} />
         <Route path="/reset-password" element={<ForgetPassword />} />
       </Routes>
     </div>

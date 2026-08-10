@@ -4,10 +4,9 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { AppContext } from "../context/AppContext";
 
-const EmailVerify = () => {
+const PatientEmailVerify = () => {
   const navigate = useNavigate();
-  const { backendUrl, isLoggedin, doctorData, getDoctorData } =
-    useContext(AppContext);
+  const { backendUrl, isLoggedin, userData, getUserData } = useContext(AppContext);
 
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -16,14 +15,13 @@ const EmailVerify = () => {
 
   axios.defaults.withCredentials = true;
 
-  // Auto-redirect to Doctor Dashboard if already verified
+  // Auto-redirect to Patient Dashboard if already verified
   useEffect(() => {
-    if (isLoggedin && doctorData && doctorData.isVerified) {
-      navigate("/doctor-dashboard", { replace: true });
+    if (isLoggedin && userData && userData.isVerified) {
+      navigate("/patient-dashboard");
     }
-  }, [isLoggedin, doctorData, navigate]);
+  }, [isLoggedin, userData, navigate]);
 
-  // Resend OTP countdown timer
   useEffect(() => {
     let interval = null;
     if (timer > 0) {
@@ -75,21 +73,18 @@ const EmailVerify = () => {
       }
 
       setLoading(true);
-
       const baseUrl = backendUrl?.endsWith("/")
         ? backendUrl.slice(0, -1)
         : backendUrl;
 
-      const { data } = await axios.post(
-        `${baseUrl}/api/doctor/verify-account`,
-        { otp }
-      );
+      const { data } = await axios.post(`${baseUrl}/api/auth/verify-account`, {
+        otp,
+      });
 
       if (data.success) {
         toast.success(data.message || "Email verified successfully!");
-        // Refresh doctor state specifically
-        await getDoctorData();
-        navigate("/doctor-dashboard", { replace: true });
+        await getUserData();
+        navigate("/patient-dashboard");
       } else {
         toast.error(data.message || "Verification failed.");
       }
@@ -114,9 +109,7 @@ const EmailVerify = () => {
         ? backendUrl.slice(0, -1)
         : backendUrl;
 
-      const { data } = await axios.post(
-        `${baseUrl}/api/doctor/send-verify-otp`
-      );
+      const { data } = await axios.post(`${baseUrl}/api/doctor/send-verify-otp`);
 
       if (data.success) {
         toast.success(data.message || "New OTP sent to your email.");
@@ -142,10 +135,9 @@ const EmailVerify = () => {
         onSubmit={onSubmitHandler}
         className="flex flex-col items-center p-8 bg-white rounded-xl shadow-lg border border-blue-100 w-full max-w-md text-primary"
       >
-        <h1 className="text-2xl font-bold mb-2">Doctor Email Verification</h1>
+        <h1 className="text-2xl font-bold mb-2">Patient Email Verification</h1>
         <p className="text-sm text-gray-500 text-center mb-6">
-          Enter the 6-digit verification code sent to your registered email
-          address.
+          Enter the 6-digit verification code sent to your registered email address.
         </p>
 
         <div
@@ -202,4 +194,4 @@ const EmailVerify = () => {
   );
 };
 
-export default EmailVerify;
+export default PatientEmailVerify;
