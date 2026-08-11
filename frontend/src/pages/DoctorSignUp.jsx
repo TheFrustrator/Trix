@@ -1,5 +1,4 @@
 import React, { useRef, useState, useContext } from "react";
-
 import UserSighUpHeader from "../cards/userSighUpHeader";
 import { Icons } from "../assets/assets";
 import HandleUploadCard from "../cards/handleUploadCard";
@@ -10,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 
 const DoctorSignUp = () => {
   const navigate = useNavigate();
-  const { backendUrl, setIsLOggedin, getDoctorData } = useContext(AppContext);
+  const { backendUrl, doctorLoginSuccess } = useContext(AppContext);
   const [isSlidebarOpen, setIsSlidebarOpen] = useState(false);
 
   const [name, setName] = useState("");
@@ -23,15 +22,12 @@ const DoctorSignUp = () => {
 
   const [loading, setLoading] = useState(false);
 
-  // Base64 string version of the file
   const [uploadLicense, setUploadLicense] = useState("");
-  // Stores original file name for display in UI
   const [licenseFileName, setLicenseFileName] = useState("");
 
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Converts File object to a Base64 string
   const convertFileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -41,20 +37,17 @@ const DoctorSignUp = () => {
     });
   };
 
-  // Helper handler for converting selected file to string
   const processSelectedFile = async (file) => {
     if (!file) return;
-
     try {
       const base64String = await convertFileToBase64(file);
-      setUploadLicense(base64String); // Set Base64 string to hook
-      setLicenseFileName(file.name); // Set name for UI display
+      setUploadLicense(base64String);
+      setLicenseFileName(file.name);
     } catch (error) {
       toast.error("Failed to read file. Please try again.");
     }
   };
 
-  // Handle Drag Events
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -67,13 +60,11 @@ const DoctorSignUp = () => {
   const handleDrop = async (e) => {
     e.preventDefault();
     setIsDragging(false);
-
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       await processSelectedFile(e.dataTransfer.files[0]);
     }
   };
 
-  // Handle Manual File Select
   const handleFileChange = async (e) => {
     if (e.target.files && e.target.files[0]) {
       await processSelectedFile(e.target.files[0]);
@@ -92,11 +83,16 @@ const DoctorSignUp = () => {
     }
 
     try {
+      setLoading(true);
       axios.defaults.withCredentials = true;
 
-      // Pure JSON request (No FormData used)
+      const baseUrl = backendUrl?.endsWith("/")
+        ? backendUrl.slice(0, -1)
+        : backendUrl;
+
+      // Step 1: Register doctor
       const { data: regData } = await axios.post(
-        `${backendUrl}/api/doctor/doctor-signup`,
+        `${baseUrl}/api/doctor/register`,
         {
           name,
           email,
@@ -104,8 +100,8 @@ const DoctorSignUp = () => {
           password,
           clinicAdd: ClinicAdd,
           Specialization,
-          uploadLicense, // Base64 Data URL String
-        },
+          uploadLicense,
+        }
       );
 
       if (!regData.success) {
@@ -113,16 +109,20 @@ const DoctorSignUp = () => {
         return toast.error(regData.message || "Registration failed");
       }
 
-      // Step 2: Request verification OTP
+      // Step 2: Store token locally & refresh doctor session
+      await doctorLoginSuccess(regData.token);
+
+      // Step 3: Request verification OTP
       const { data: otpData } = await axios.post(
-        `${backendUrl}/api/doctor/send-verify-otp`,
+        `${baseUrl}/api/doctor/send-verify-otp`
       );
 
       if (otpData.success) {
         toast.success("Account created! OTP sent to your email.");
         navigate("/email-verify");
       } else {
-        toast.error(otpData.message);
+        toast.error(otpData.message || "Failed to send OTP.");
+        navigate("/email-verify");
       }
     } catch (error) {
       const errorMessage =
@@ -131,34 +131,33 @@ const DoctorSignUp = () => {
         "Something went wrong. Please try again.";
 
       toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div>
-      {/* Sign Up header component */}
       <UserSighUpHeader
         isSlidebarOpen={isSlidebarOpen}
         setIsSlidebarOpen={setIsSlidebarOpen}
       />
 
-      {/* Form section */}
       <form
         onSubmit={onSubmitHandler}
         className="min-h-[80vh] flex items-center"
       >
-        <div className="flex flex-col gap-3 m-auto items-center p-8 min-w-[340px] sm:min-w-96 border rounded-xl text-primary text-sm shadow-lg">
+        <div className="flex flex-col gap-3 m-auto items-center p-8 min-w-[340px] sm:min-w-96 border rounded-xl text-primary text-sm shadow-lg bg-white">
           <p className="text-3xl font-semibold mb-5">Create Doctor account</p>
           <div className="flex flex-row items-center justify-center gap-2">
             <div>
               <img
                 className="w-full md:w-[300px]"
                 src={Icons.doctorSU}
-                alt=""
+                alt="Doctor Signup"
               />
             </div>
             <div>
-              {/* Full name section */}
               <div className="w-full my-1">
                 <p>Full Name</p>
                 <input
@@ -167,10 +166,10 @@ const DoctorSignUp = () => {
                   onChange={(e) => setName(e.target.value)}
                   value={name}
                   className="border border-blue-100 w-full rounded-lg p-2 mt-1"
+                  required
                 />
               </div>
 
-              {/* Email Section */}
               <div className="w-full my-1">
                 <p>Email</p>
                 <input
@@ -179,10 +178,10 @@ const DoctorSignUp = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="border border-blue-100 w-full rounded-lg p-2 mt-1"
+                  required
                 />
               </div>
 
-              {/* Phone number section */}
               <div className="w-full my-1">
                 <p>Phone Number</p>
                 <input
@@ -192,10 +191,10 @@ const DoctorSignUp = () => {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   className="border border-blue-100 w-full rounded-lg p-2 mt-1"
+                  required
                 />
               </div>
 
-              {/* Password section */}
               <div className="flex flex-row w-full my-1 gap-1">
                 <div>
                   <p>Password</p>
@@ -205,6 +204,7 @@ const DoctorSignUp = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="border border-blue-100 w-full rounded-lg p-2 mt-1"
+                    required
                   />
                 </div>
                 <div>
@@ -215,11 +215,11 @@ const DoctorSignUp = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="border border-blue-100 w-full rounded-lg p-2 mt-1"
+                    required
                   />
                 </div>
               </div>
 
-              {/* Clinic section */}
               <div className="w-full my-1">
                 <p>Clinic/Hospital Name</p>
                 <input
@@ -228,10 +228,10 @@ const DoctorSignUp = () => {
                   value={ClinicAdd}
                   onChange={(e) => setClinicAdd(e.target.value)}
                   className="border border-blue-100 w-full rounded-lg p-2 mt-1"
+                  required
                 />
               </div>
 
-              {/* Specialization section */}
               <div className="w-full my-1">
                 <p>Specialization</p>
                 <input
@@ -240,10 +240,10 @@ const DoctorSignUp = () => {
                   value={Specialization}
                   onChange={(e) => setSpecialization(e.target.value)}
                   className="border border-blue-100 w-full rounded-lg p-2 mt-1"
+                  required
                 />
               </div>
 
-              {/* Upload license component */}
               <div className="w-full my-1">
                 <HandleUploadCard
                   isDragging={isDragging}

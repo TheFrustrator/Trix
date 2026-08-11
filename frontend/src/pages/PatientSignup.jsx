@@ -8,7 +8,7 @@ import axios from "axios";
 
 const PatientSignup = () => {
   const navigate = useNavigate();
-  const { backendUrl, setIsLOggedin, getUserData } = useContext(AppContext);
+  const { backendUrl, loginSuccess } = useContext(AppContext);
 
   const [isSlidebarOpen, setIsSlidebarOpen] = useState(false);
 
@@ -35,9 +35,9 @@ const PatientSignup = () => {
         ? backendUrl.slice(0, -1)
         : backendUrl;
 
-      // Step 1: Register patient user and set HTTP-only cookie
+      // Step 1: Register patient user
       const { data: regData } = await axios.post(
-        `${baseUrl}/api/auth/patient-signup`,
+        `${baseUrl}/api/auth/register`,
         { name, email, phoneNumber, password, dob }
       );
 
@@ -46,11 +46,10 @@ const PatientSignup = () => {
         return toast.error(regData.message || "Registration failed");
       }
 
-      // Update auth state and fetch user details
-      setIsLOggedin(true);
-      await getUserData();
+      // Step 2: Store token locally & refresh user session
+      await loginSuccess(regData.token);
 
-      // Step 2: Request verification OTP for the new user
+      // Step 3: Request verification OTP for the new user
       const { data: otpData } = await axios.post(
         `${baseUrl}/api/auth/send-verify-otp`
       );
@@ -60,7 +59,6 @@ const PatientSignup = () => {
         navigate("/patient-email-verify");
       } else {
         toast.error(otpData.message || "Failed to send OTP.");
-        // Navigate anyway since account exists and user can click 'Resend OTP'
         navigate("/patient-email-verify");
       }
     } catch (error) {
@@ -144,7 +142,9 @@ const PatientSignup = () => {
                   />
                 </div>
                 <div className="w-1/2">
-                  <p className="font-semibold text-slate-700">Confirm Password</p>
+                  <p className="font-semibold text-slate-700">
+                    Confirm Password
+                  </p>
                   <input
                     type="password"
                     placeholder="*********"

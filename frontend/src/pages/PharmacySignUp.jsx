@@ -1,5 +1,4 @@
 import React, { useContext, useRef, useState } from "react";
-
 import UserSighUpHeader from "../cards/userSighUpHeader";
 import { Icons } from "../assets/assets";
 import HandleUploadCard from "../cards/handleUploadCard";
@@ -8,28 +7,45 @@ import axios from "axios";
 import { AppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
 
-
 const PharmacySignUp = () => {
-  const [isSlidebarOpen, setIsSlidebarOpen] = useState();
-   const { backendUrl, setIsLOggedin, getPharmacyData } = useContext(AppContext);
-   const navigate = useNavigate()
-    const [loading, setLoading] = useState(false);
+  const [isSlidebarOpen, setIsSlidebarOpen] = useState(false);
+  const { backendUrl, pharmacyLoginSuccess } = useContext(AppContext);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const [shopName, setShopName] = useState("");
   const [ownerName, setOwnerName] = useState("");
   const [email, setEmail] = useState("");
-
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [shopAdd, setShopAdd] = useState("");
-  // const [uploadLicense, setUploadLicense] = useState("");
 
-  const [uploadLicense, setUploadLicense] = useState(null);
+  const [uploadLicense, setUploadLicense] = useState("");
+  const [licenseFileName, setLicenseFileName] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Handle Drag Events
+  const convertFileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const processSelectedFile = async (file) => {
+    if (!file) return;
+    try {
+      const base64String = await convertFileToBase64(file);
+      setUploadLicense(base64String);
+      setLicenseFileName(file.name);
+    } catch (error) {
+      toast.error("Failed to read file. Please try again.");
+    }
+  };
+
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -39,23 +55,21 @@ const PharmacySignUp = () => {
     setIsDragging(false);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault();
     setIsDragging(false);
-
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setUploadLicense(e.dataTransfer.files[0]);
+      await processSelectedFile(e.dataTransfer.files[0]);
     }
   };
 
-  // Handle Manual File Select
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     if (e.target.files && e.target.files[0]) {
-      setUploadLicense(e.target.files[0]);
+      await processSelectedFile(e.target.files[0]);
     }
   };
 
- const onSubmitHandler = async (event) => {
+  const onSubmitHandler = async (event) => {
     event.preventDefault();
 
     if (password !== confirmPassword) {
@@ -67,32 +81,46 @@ const PharmacySignUp = () => {
     }
 
     try {
+      setLoading(true);
       axios.defaults.withCredentials = true;
 
-      // Pure JSON request (No FormData used)
+      const baseUrl = backendUrl?.endsWith("/")
+        ? backendUrl.slice(0, -1)
+        : backendUrl;
+
+      // Step 1: Register pharmacy
       const { data: regData } = await axios.post(
-        `${backendUrl}/api/pharmacy/pharmacy-signup`,
+        `${baseUrl}/api/pharmacy/register`,
         {
-         shopName, ownerName, email, password, phoneNumber, shopAdd,
-          uploadLicense, // Base64 Data URL String
+          shopName,
+          ownerName,
+          email,
+          password,
+          phoneNumber,
+          shopAdd,
+          uploadLicense,
         }
       );
 
       if (!regData.success) {
-        setLoading(false)
+        setLoading(false);
         return toast.error(regData.message || "Registration failed");
       }
 
-      // Step 2: Request verification OTP
+      // Step 2: Store token locally & refresh pharmacy session
+      await pharmacyLoginSuccess(regData.token);
+
+      // Step 3: Request verification OTP
       const { data: otpData } = await axios.post(
-        `${backendUrl}/api/pharmacy/send-verify-otp`
+        `${baseUrl}/api/pharmacy/send-verify-otp`
       );
 
       if (otpData.success) {
         toast.success("Account created! OTP sent to your email.");
         navigate("/pharmacy-email-verify");
       } else {
-        toast.error(otpData.message);
+        toast.error(otpData.message || "Failed to send OTP.");
+        navigate("/pharmacy-email-verify");
       }
     } catch (error) {
       const errorMessage =
@@ -101,33 +129,33 @@ const PharmacySignUp = () => {
         "Something went wrong. Please try again.";
 
       toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div>
-      {/* Sign Up header componenet  */}
       <UserSighUpHeader
         isSlidebarOpen={isSlidebarOpen}
         setIsSlidebarOpen={setIsSlidebarOpen}
       />
 
-      {/* left side image and the form compone */}
-    
-      <form onSubmit={onSubmitHandler} className="min-h-[80vh] flex items-center">
-        <div className="flex flex-col gap-3 m-auto items-center p-8 min-w-[340px] sm:min-w-96 border rounded-xl text-primary text-sm shadow-lg">
+      <form
+        onSubmit={onSubmitHandler}
+        className="min-h-[80vh] flex items-center"
+      >
+        <div className="flex flex-col gap-3 m-auto items-center p-8 min-w-[340px] sm:min-w-96 border rounded-xl text-primary text-sm shadow-lg bg-white">
           <p className="text-3xl font-semibold mb-5">Create Pharmacy account</p>
           <div className="flex flex-row items-center justify-center gap-2">
-            <div className="">
+            <div>
               <img
                 className="w-full md:w-[300px]"
                 src={Icons.pharmacisSU}
-                alt=""
+                alt="Pharmacy Signup"
               />
             </div>
             <div>
-              {" "}
-              {/* full name section  */}
               <div className="w-full my-1">
                 <p>Shop Name</p>
                 <input
@@ -136,9 +164,9 @@ const PharmacySignUp = () => {
                   onChange={(e) => setShopName(e.target.value)}
                   value={shopName}
                   className="border border-blue-100 w-full rounded-lg p-2 mt-1"
+                  required
                 />
               </div>
-              {/* Owner section  */}
               <div className="w-full my-1">
                 <p>Owner Name</p>
                 <input
@@ -147,9 +175,9 @@ const PharmacySignUp = () => {
                   onChange={(e) => setOwnerName(e.target.value)}
                   value={ownerName}
                   className="border border-blue-100 w-full rounded-lg p-2 mt-1"
+                  required
                 />
               </div>
-              {/* Email Section  */}
               <div className="w-full my-1">
                 <p>Email</p>
                 <input
@@ -158,9 +186,9 @@ const PharmacySignUp = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   value={email}
                   className="border border-blue-100 w-full rounded-lg p-2 mt-1"
+                  required
                 />
               </div>
-              {/* phone number section  */}
               <div className="w-full my-1">
                 <p>Phone Number</p>
                 <input
@@ -170,11 +198,10 @@ const PharmacySignUp = () => {
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   value={phoneNumber}
                   className="border border-blue-100 w-full rounded-lg p-2 mt-1"
+                  required
                 />
               </div>
-              {/* password section  */}
               <div className="flex flex-row w-full my-1 gap-1">
-                {/* passord  */}
                 <div>
                   <p>Password</p>
                   <input
@@ -183,9 +210,9 @@ const PharmacySignUp = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     value={password}
                     className="border border-blue-100 w-full rounded-lg p-2 mt-1"
+                    required
                   />
                 </div>
-                {/* confirm password  */}
                 <div>
                   <p>Confirm Password</p>
                   <input
@@ -194,10 +221,10 @@ const PharmacySignUp = () => {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     value={confirmPassword}
                     className="border border-blue-100 w-full rounded-lg p-2 mt-1"
+                    required
                   />
                 </div>
               </div>
-              {/* Date of birth section */}
               <div className="w-full my-1">
                 <p>Shop Address</p>
                 <input
@@ -206,6 +233,7 @@ const PharmacySignUp = () => {
                   onChange={(e) => setShopAdd(e.target.value)}
                   value={shopAdd}
                   className="border border-blue-100 w-full rounded-lg p-2 mt-1"
+                  required
                 />
               </div>
               <div className="w-full my-1">
@@ -220,9 +248,10 @@ const PharmacySignUp = () => {
                   handleDrop={handleDrop}
                   handleFileChange={handleFileChange}
                   valueUser="Pharmacy"
+                  fileName={licenseFileName}
                 />
               </div>
-             <button
+              <button
                 type="submit"
                 disabled={loading}
                 className="bg-blue-500 text-white w-full py-2.5 rounded-md text-base font-semibold mt-3 hover:bg-blue-600 transition-colors disabled:bg-blue-300 cursor-pointer"
