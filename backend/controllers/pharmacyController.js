@@ -1,9 +1,9 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
-import pharmacyModel from "../models/PharmacyModel.js";
 import prescriptionPdfModel from "../models/prescriptionPdfModel.js";
 import userModel from "../models/userModel.js";
+import pharmacyModel from "../models/pharmacyModel.js";
 import doctorModel from "../models/doctorModel.js";
 import transporter from "../config/nodemailer.js";
 
