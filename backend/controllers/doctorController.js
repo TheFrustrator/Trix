@@ -52,8 +52,8 @@ export const doctorRegister = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      secure: true,
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -68,6 +68,7 @@ export const doctorRegister = async (req, res) => {
 
     return res.json({
       success: true,
+      token,
       message: "Doctor registered successfully",
     });
   } catch (error) {
@@ -107,11 +108,12 @@ export const doctorlogin = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      secure: true,
+      sameSite: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return res.json({ success: true });
+    return res.json({ success: true, token });
   } catch (error) {
     return res.json({ success: false, message: error.message });
   }
@@ -121,8 +123,8 @@ export const doctorlogout = async (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      secure: true,
+      sameSite: "none",
     });
 
     return res.json({ success: true, message: "Logged Out" });
@@ -395,7 +397,6 @@ export const createAccessRequest = async (req, res) => {
   }
 };
 
-// Cancel an ongoing pending request from the Doctor side
 export const cancelAccessRequest = async (req, res) => {
   try {
     const docId = req.docId || req.body?.docId;
@@ -420,7 +421,6 @@ export const cancelAccessRequest = async (req, res) => {
     request.status = "cancelled";
     await request.save();
 
-    // Notify patient room to remove pending request card immediately
     const io = req.app.get("io");
     if (io && request.patientCustomId) {
       io.to(request.patientCustomId).emit("cancel-access-request", {
@@ -523,9 +523,6 @@ export const saveDiagnosis = async (req, res) => {
   }
 };
 
-
-
-// Fetch Active Session Info & Expiration for Lock Header
 export const getActiveSessionDetails = async (req, res) => {
   try {
     const docId = req.docId || req.body?.docId;
@@ -564,7 +561,6 @@ export const getActivePatientSummary = async (req, res) => {
         .json({ success: false, message: "Invalid Patient ID" });
     }
 
-    // userModel's DOB field is `dob` — that's the only birth-date field on the schema.
     const patient = await userModel
       .findOne({ patientId: patientCustomId })
       .select("name email phoneNumber patientId dob allergies historyList");
@@ -575,7 +571,6 @@ export const getActivePatientSummary = async (req, res) => {
         .json({ success: false, message: "Patient not found" });
     }
 
-    // Format Date of Birth safely
     let formattedDOB = "N/A";
     if (patient.dob) {
       const parsedDate = new Date(patient.dob);
@@ -584,13 +579,12 @@ export const getActivePatientSummary = async (req, res) => {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
-        }); // DD/MM/YYYY
+        });
       } else {
         formattedDOB = String(patient.dob);
       }
     }
 
-    // Fetch recent diagnoses to populate condensed history
     const recentDiagnoses = await diagnosisModel
       .find({ patientCustomId })
       .sort({ createdAt: -1 })
@@ -636,7 +630,7 @@ export const recordRecentPatientVisit = async (
   patientId,
   patientCustomId,
   patientName,
-  disease,
+  disease
 ) => {
   try {
     await recentPatientModel.findOneAndUpdate(
@@ -647,14 +641,13 @@ export const recordRecentPatientVisit = async (
         disease: disease || "General Consultation",
         lastVisitDate: new Date(),
       },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" }
     );
   } catch (error) {
     console.error("Error recording recent patient:", error);
   }
 };
 
-// GET Controller: Fetch the 6 most recent patients
 export const getRecentPatients = async (req, res) => {
   try {
     const docId = req.docId || req.body?.docId;
@@ -701,7 +694,6 @@ export const getCurrentActiveSession = async (req, res) => {
 
     const now = new Date();
 
-    // Find the most recently granted active session that has not expired
     const activeSession = await accessRequestModel
       .findOne({
         doctorId: docId,

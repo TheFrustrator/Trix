@@ -3,20 +3,14 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import prescriptionPdfModel from "../models/prescriptionPdfModel.js";
 import userModel from "../models/userModel.js";
-import pharmacyModel from '../models/pharmacyModel.js';
+import pharmacyModel from "../models/pharmacyModel.js";
 import doctorModel from "../models/doctorModel.js";
 import transporter from "../config/nodemailer.js";
 
-// PHARMACY SIGNIN
+// PHARMACY SIGNIN / REGISTER
 export const pharmacyRegister = async (req, res) => {
-  const {
-    shopName,
-    ownerName,
-    email,
-    password,
-    phoneNumber,
-    shopAdd,
-  } = req.body;
+  const { shopName, ownerName, email, password, phoneNumber, shopAdd } =
+    req.body;
 
   if (
     !shopName ||
@@ -53,12 +47,9 @@ export const pharmacyRegister = async (req, res) => {
 
     const safePhone = (phoneNumber || "0000").slice(-4);
 
-    const randomDigits = Math.floor(
-      1000 + Math.random() * 9000
-    ).toString();
+    const randomDigits = Math.floor(1000 + Math.random() * 9000).toString();
 
-    const generatedPharmacyID =
-      `${safeName}${safePhone}${randomDigits}PHM`;
+    const generatedPharmacyID = `${safeName}${safePhone}${randomDigits}PHM`;
 
     const pharmacy = new pharmacyModel({
       shopName,
@@ -73,21 +64,14 @@ export const pharmacyRegister = async (req, res) => {
 
     await pharmacy.save();
 
-    const token = jwt.sign(
-      { id: pharmacy._id },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "7d",
-      }
-    );
+    const token = jwt.sign({ id: pharmacy._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite:
-        process.env.NODE_ENV === "production"
-          ? "none"
-          : "strict",
+      secure: true,
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -100,6 +84,7 @@ export const pharmacyRegister = async (req, res) => {
 
     return res.json({
       success: true,
+      token,
       message: "Pharmacy registered successfully",
     });
   } catch (error) {
@@ -110,7 +95,7 @@ export const pharmacyRegister = async (req, res) => {
   }
 };
 
-// PHARMACY REGISTRATION
+// PHARMACY LOGIN
 export const pharmacyLogin = async (req, res) => {
   const { email, password } = req.body;
 
@@ -138,10 +123,7 @@ export const pharmacyLogin = async (req, res) => {
       });
     }
 
-    const isMatch = await bcrypt.compare(
-      password,
-      pharmacy.password
-    );
+    const isMatch = await bcrypt.compare(password, pharmacy.password);
 
     if (!isMatch) {
       return res.json({
@@ -150,25 +132,20 @@ export const pharmacyLogin = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      { id: pharmacy._id },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "7d",
-      }
-    );
+    const token = jwt.sign({ id: pharmacy._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite:
-        process.env.NODE_ENV === "production"
-          ? "none"
-          : "strict",
+      secure: true,
+      sameSite: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return res.json({
       success: true,
+      token,
     });
   } catch (error) {
     return res.json({
@@ -178,17 +155,13 @@ export const pharmacyLogin = async (req, res) => {
   }
 };
 
-
 // PHARMACY LOGOUT
 export const pharmacyLogout = async (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite:
-        process.env.NODE_ENV === "production"
-          ? "none"
-          : "strict",
+      secure: true,
+      sameSite: "none",
     });
 
     return res.json({
@@ -203,11 +176,10 @@ export const pharmacyLogout = async (req, res) => {
   }
 };
 
-// SEND OTP TO THE REGISTER EMAIL
+// SEND OTP TO REGISTERED EMAIL
 export const sendVerifyOtp = async (req, res) => {
   try {
-    const pharmacyId =
-      req.pharmacyId || req.body?.pharmacyId;
+    const pharmacyId = req.pharmacyId || req.body?.pharmacyId;
 
     if (!pharmacyId) {
       return res.json({
@@ -216,8 +188,7 @@ export const sendVerifyOtp = async (req, res) => {
       });
     }
 
-    const pharmacy =
-      await pharmacyModel.findById(pharmacyId);
+    const pharmacy = await pharmacyModel.findById(pharmacyId);
 
     if (!pharmacy) {
       return res.json({
@@ -233,13 +204,10 @@ export const sendVerifyOtp = async (req, res) => {
       });
     }
 
-    const otp = String(
-      Math.floor(100000 + Math.random() * 900000)
-    );
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
 
     pharmacy.verifyOTP = otp;
-    pharmacy.verifyOTPExpireAt =
-      Date.now() + 24 * 60 * 60 * 1000;
+    pharmacy.verifyOTPExpireAt = Date.now() + 24 * 60 * 60 * 1000;
 
     await pharmacy.save();
 
@@ -262,11 +230,9 @@ export const sendVerifyOtp = async (req, res) => {
   }
 };
 
-// VERIFY OTP VIA OTP SEND TO EMAIL
+// VERIFY EMAIL VIA OTP
 export const verifyEmail = async (req, res) => {
-  const pharmacyId =
-    req.pharmacyId || req.body?.pharmacyId;
-
+  const pharmacyId = req.pharmacyId || req.body?.pharmacyId;
   const { otp } = req.body;
 
   if (!pharmacyId || !otp) {
@@ -277,8 +243,7 @@ export const verifyEmail = async (req, res) => {
   }
 
   try {
-    const pharmacy =
-      await pharmacyModel.findById(pharmacyId);
+    const pharmacy = await pharmacyModel.findById(pharmacyId);
 
     if (!pharmacy) {
       return res.json({
@@ -287,10 +252,7 @@ export const verifyEmail = async (req, res) => {
       });
     }
 
-    if (
-      pharmacy.verifyOTP === "" ||
-      pharmacy.verifyOTP !== otp
-    ) {
+    if (pharmacy.verifyOTP === "" || pharmacy.verifyOTP !== otp) {
       return res.json({
         success: false,
         message: "Invalid OTP",
@@ -322,7 +284,7 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
-// CHECK AUTHENTICATON FOR SECURE ROUTES
+// CHECK AUTHENTICATION FOR SECURE ROUTES
 export const isAuthenticated = async (req, res) => {
   try {
     return res.json({
@@ -348,8 +310,7 @@ export const sendResetOtp = async (req, res) => {
   }
 
   try {
-    const pharmacy =
-      await pharmacyModel.findOne({ email });
+    const pharmacy = await pharmacyModel.findOne({ email });
 
     if (!pharmacy) {
       return res.json({
@@ -358,16 +319,11 @@ export const sendResetOtp = async (req, res) => {
       });
     }
 
-    const rawOtp = String(
-      Math.floor(100000 + Math.random() * 900000)
-    );
-
-    const hashedOtp =
-      await bcrypt.hash(rawOtp, 10);
+    const rawOtp = String(Math.floor(100000 + Math.random() * 900000));
+    const hashedOtp = await bcrypt.hash(rawOtp, 10);
 
     pharmacy.resetOTP = hashedOtp;
-    pharmacy.resetOtpExpireAt =
-      Date.now() + 15 * 60 * 1000;
+    pharmacy.resetOtpExpireAt = Date.now() + 15 * 60 * 1000;
 
     await pharmacy.save();
 
@@ -390,22 +346,19 @@ export const sendResetOtp = async (req, res) => {
   }
 };
 
-
-// VERIFY EMAIL VIA OTP AND SAVED NEW OTP
+// RESET PASSWORD
 export const resetPassword = async (req, res) => {
   const { email, otp, newPassword } = req.body;
 
   if (!email || !otp || !newPassword) {
     return res.json({
       success: false,
-      message:
-        "Email, OTP, and New Password are required",
+      message: "Email, OTP, and New Password are required",
     });
   }
 
   try {
-    const pharmacy =
-      await pharmacyModel.findOne({ email });
+    const pharmacy = await pharmacyModel.findOne({ email });
 
     if (!pharmacy) {
       return res.json({
@@ -414,20 +367,14 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    if (
-      !pharmacy.resetOTP ||
-      pharmacy.resetOtpExpireAt < Date.now()
-    ) {
+    if (!pharmacy.resetOTP || pharmacy.resetOtpExpireAt < Date.now()) {
       return res.json({
         success: false,
         message: "OTP has expired or is invalid",
       });
     }
 
-    const isMatch = await bcrypt.compare(
-      otp,
-      pharmacy.resetOTP
-    );
+    const isMatch = await bcrypt.compare(otp, pharmacy.resetOTP);
 
     if (!isMatch) {
       return res.json({
@@ -436,9 +383,7 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    pharmacy.password =
-      await bcrypt.hash(newPassword, 10);
-
+    pharmacy.password = await bcrypt.hash(newPassword, 10);
     pharmacy.resetOTP = "";
     pharmacy.resetOtpExpireAt = 0;
 
@@ -456,14 +401,12 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-// FETCH PHARMACY DATA TO TEH APPCONTEXT 
+// FETCH PHARMACY DATA FOR APPCONTEXT
 export const getPharmacyData = async (req, res) => {
   try {
-    const pharmacyId =
-      req.pharmacyId || req.body?.pharmacyId;
+    const pharmacyId = req.pharmacyId || req.body?.pharmacyId;
 
-    const pharmacy =
-      await pharmacyModel.findById(pharmacyId);
+    const pharmacy = await pharmacyModel.findById(pharmacyId);
 
     if (!pharmacy) {
       return res.json({
@@ -492,189 +435,100 @@ export const getPharmacyData = async (req, res) => {
   }
 };
 
-
-// CHECK IF THE PRESCRIPTION MEDICINES ARE DISPENSED OR NOT
-export const getPrescriptionForDispense = async (
-  req,
-  res,
-) => {
+// GET PRESCRIPTION FOR DISPENSING
+export const getPrescriptionForDispense = async (req, res) => {
   try {
-    const pharmacyId =
-      req.pharmacyId;
+    const pharmacyId = req.pharmacyId;
 
     if (!pharmacyId) {
       return res.status(401).json({
         success: false,
-        message:
-          "Unauthorized. Please login again.",
+        message: "Unauthorized. Please login again.",
       });
     }
 
-   
-    const { patientId } =
-      req.params;
+    const { patientId } = req.params;
 
-    if (
-      !patientId ||
-      typeof patientId !== "string"
-    ) {
+    if (!patientId || typeof patientId !== "string") {
       return res.status(400).json({
         success: false,
-        message:
-          "Patient ID is required.",
+        message: "Patient ID is required.",
       });
     }
 
-    const cleanPatientId =
-      patientId.trim();
+    const cleanPatientId = patientId.trim();
 
-    
-    const latestPrescription =
-      await prescriptionPdfModel
-        .findOne({
-          patientCustomId:
-            cleanPatientId,
-        })
-        .populate(
-          "doctorId",
-          "name clinicAdd Specialization phoneNumber regNo",
-        )
-        .populate(
-          "patientId",
-          "name patientId phoneNumber",
-        )
-        .sort({
-          createdAt: -1,
-        });
+    const latestPrescription = await prescriptionPdfModel
+      .findOne({
+        patientCustomId: cleanPatientId,
+      })
+      .populate("doctorId", "name clinicAdd Specialization phoneNumber regNo")
+      .populate("patientId", "name patientId phoneNumber")
+      .sort({
+        createdAt: -1,
+      });
 
     if (!latestPrescription) {
       return res.status(404).json({
         success: false,
-        message:
-          "No prescription found for this Patient ID.",
+        message: "No prescription found for this Patient ID.",
       });
     }
 
-
     const patient = {
-      id:
-        latestPrescription.patientId?._id ||
-        null,
-
+      id: latestPrescription.patientId?._id || null,
       name:
         latestPrescription.patientId?.name ||
         latestPrescription.patientName ||
         "Patient",
-
-      patientCustomId:
-        latestPrescription.patientCustomId,
-
-      phoneNumber:
-        latestPrescription.patientId
-          ?.phoneNumber || "N/A",
-
-      ageGender:
-        latestPrescription.patientAgeGender ||
-        "N/A",
+      patientCustomId: latestPrescription.patientCustomId,
+      phoneNumber: latestPrescription.patientId?.phoneNumber || "N/A",
+      ageGender: latestPrescription.patientAgeGender || "N/A",
     };
 
-   
     const doctor = {
-      id:
-        latestPrescription.doctorId?._id ||
-        null,
-
-      name:
-        latestPrescription.doctorId?.name ||
-        "Doctor",
-
-      clinicAdd:
-        latestPrescription.doctorId
-          ?.clinicAdd || "N/A",
-
-      specialization:
-        latestPrescription.doctorId
-          ?.Specialization || "N/A",
-
-      phone:
-        latestPrescription.doctorId
-          ?.phoneNumber || "N/A",
-
-      regNo:
-        latestPrescription.doctorId?.regNo ||
-        "N/A",
+      id: latestPrescription.doctorId?._id || null,
+      name: latestPrescription.doctorId?.name || "Doctor",
+      clinicAdd: latestPrescription.doctorId?.clinicAdd || "N/A",
+      specialization: latestPrescription.doctorId?.Specialization || "N/A",
+      phone: latestPrescription.doctorId?.phoneNumber || "N/A",
+      regNo: latestPrescription.doctorId?.regNo || "N/A",
     };
-
 
     const prescription = {
-      _id:
-        latestPrescription._id,
-
-      id:
-        latestPrescription._id,
-
-      prescriptionCustomId:
-        latestPrescription.prescriptionCustomId,
-
-      patientCustomId:
-        latestPrescription.patientCustomId,
-
-      patientName:
-        latestPrescription.patientName,
-
-      patientAgeGender:
-        latestPrescription.patientAgeGender,
-
-      diagnosis:
-        latestPrescription.diagnosis,
-
-      medicines:
-        latestPrescription.medicines,
-
-      notes:
-        latestPrescription.notes,
-
-      issueDate:
-        latestPrescription.issueDate,
-
-      validUntilDate:
-        latestPrescription.validUntilDate,
-
-      pdfFileName:
-        latestPrescription.pdfFileName,
-
-      status:
-        latestPrescription.status,
-
+      _id: latestPrescription._id,
+      id: latestPrescription._id,
+      prescriptionCustomId: latestPrescription.prescriptionCustomId,
+      patientCustomId: latestPrescription.patientCustomId,
+      patientName: latestPrescription.patientName,
+      patientAgeGender: latestPrescription.patientAgeGender,
+      diagnosis: latestPrescription.diagnosis,
+      medicines: latestPrescription.medicines,
+      notes: latestPrescription.notes,
+      issueDate: latestPrescription.issueDate,
+      validUntilDate: latestPrescription.validUntilDate,
+      pdfFileName: latestPrescription.pdfFileName,
+      status: latestPrescription.status,
       doctor,
-
       patient,
     };
 
     return res.status(200).json({
       success: true,
-
       patient,
-
       prescription,
     });
   } catch (error) {
-    console.error(
-      "getPrescriptionForDispense error:",
-      error,
-    );
+    console.error("getPrescriptionForDispense error:", error);
 
     return res.status(500).json({
       success: false,
-      message:
-        error.message ||
-        "Internal server error.",
+      message: error.message || "Internal server error.",
     });
   }
 };
 
-
-// GIVE THE PRESCRIPTION DETAILS
+// GET DETAILED PRESCRIPTION INFORMATION
 export const getPrescriptionDetails = async (req, res) => {
   try {
     const pharmacyId = req.pharmacyId;
@@ -695,28 +549,17 @@ export const getPrescriptionDetails = async (req, res) => {
       });
     }
 
-    if (
-      !mongoose.Types.ObjectId.isValid(
-        prescriptionId
-      )
-    ) {
+    if (!mongoose.Types.ObjectId.isValid(prescriptionId)) {
       return res.status(400).json({
         success: false,
         message: "Invalid prescription ID.",
       });
     }
 
-    const prescription =
-      await prescriptionPdfModel
-        .findById(prescriptionId)
-        .populate(
-          "doctorId",
-          "name clinicAdd Specialization phoneNumber regNo"
-        )
-        .populate(
-          "patientId",
-          "name patientCustomId phoneNumber age gender"
-        );
+    const prescription = await prescriptionPdfModel
+      .findById(prescriptionId)
+      .populate("doctorId", "name clinicAdd Specialization phoneNumber regNo")
+      .populate("patientId", "name patientCustomId phoneNumber age gender");
 
     if (!prescription) {
       return res.status(404).json({
@@ -730,113 +573,51 @@ export const getPrescriptionDetails = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-
       prescriptionData: {
         id: prescription._id,
-
-        prescriptionCustomId:
-          prescription.prescriptionCustomId,
-
-        patientCustomId:
-          prescription.patientCustomId,
-
-        patientName:
-          prescription.patientName,
-
-        patientAgeGender:
-          prescription.patientAgeGender,
-
-        diagnosis:
-          prescription.diagnosis,
-
-        medicines:
-          prescription.medicines || [],
-
-        notes:
-          prescription.notes || "",
-
-        issueDate:
-          prescription.issueDate,
-
-        validUntilDate:
-          prescription.validUntilDate,
-
-        pdfFileName:
-          prescription.pdfFileName,
-
-        status:
-          prescription.status,
-
-        dispensedAt:
-          prescription.dispensedAt || null,
-
+        prescriptionCustomId: prescription.prescriptionCustomId,
+        patientCustomId: prescription.patientCustomId,
+        patientName: prescription.patientName,
+        patientAgeGender: prescription.patientAgeGender,
+        diagnosis: prescription.diagnosis,
+        medicines: prescription.medicines || [],
+        notes: prescription.notes || "",
+        issueDate: prescription.issueDate,
+        validUntilDate: prescription.validUntilDate,
+        pdfFileName: prescription.pdfFileName,
+        status: prescription.status,
+        dispensedAt: prescription.dispensedAt || null,
         doctor: {
-          id:
-            doctor?._id || null,
-
-          name:
-            doctor?.name || "Doctor",
-
-          clinicAdd:
-            doctor?.clinicAdd || "N/A",
-
-          specialization:
-            doctor?.Specialization || "N/A",
-
-          phone:
-            doctor?.phoneNumber || "N/A",
-
-          regNo:
-            doctor?.regNo || "N/A",
+          id: doctor?._id || null,
+          name: doctor?.name || "Doctor",
+          clinicAdd: doctor?.clinicAdd || "N/A",
+          specialization: doctor?.Specialization || "N/A",
+          phone: doctor?.phoneNumber || "N/A",
+          regNo: doctor?.regNo || "N/A",
         },
-
         patient: {
-          id:
-            patient?._id ||
-            prescription.patientId ||
-            null,
-
-          name:
-            patient?.name ||
-            prescription.patientName ||
-            "Patient",
-
-          patientCustomId:
-            prescription.patientCustomId,
-
-          phoneNumber:
-            patient?.phoneNumber || "N/A",
-
-          ageGender:
-            prescription.patientAgeGender || "N/A",
+          id: patient?._id || prescription.patientId || null,
+          name: patient?.name || prescription.patientName || "Patient",
+          patientCustomId: prescription.patientCustomId,
+          phoneNumber: patient?.phoneNumber || "N/A",
+          ageGender: prescription.patientAgeGender || "N/A",
         },
       },
     });
   } catch (error) {
-    console.error(
-      "getPrescriptionDetails error:",
-      error
-    );
+    console.error("getPrescriptionDetails error:", error);
 
     return res.status(500).json({
       success: false,
-      message:
-        error.message ||
-        "Unable to fetch prescription.",
+      message: error.message || "Unable to fetch prescription.",
     });
   }
 };
 
-
-
-export const dispensePrescription = async (
-  req,
-  res,
-) => {
+// DISPENSE PRESCRIPTION
+export const dispensePrescription = async (req, res) => {
   try {
-    const pharmacyId =
-      req.pharmacyId ||
-      req.body?.pharmacyId;
+    const pharmacyId = req.pharmacyId || req.body?.pharmacyId;
 
     if (!pharmacyId) {
       return res.status(401).json({
@@ -845,167 +626,104 @@ export const dispensePrescription = async (
       });
     }
 
-    const { prescriptionId } =
-      req.body;
+    const { prescriptionId } = req.body;
 
-    if (
-      !prescriptionId ||
-      !prescriptionId.match(
-        /^[0-9a-fA-F]{24}$/,
-      )
-    ) {
+    if (!prescriptionId || !prescriptionId.match(/^[0-9a-fA-F]{24}$/)) {
       return res.status(400).json({
         success: false,
-        message:
-          "Invalid prescription ID.",
+        message: "Invalid prescription ID.",
       });
     }
 
-    const rx =
-      await prescriptionPdfModel.findById(
-        prescriptionId,
-      );
+    const rx = await prescriptionPdfModel.findById(prescriptionId);
 
     if (!rx) {
       return res.status(404).json({
         success: false,
-        message:
-          "Prescription not found.",
+        message: "Prescription not found.",
       });
     }
 
-    if (
-      rx.status ===
-      "DISPENSED"
-    ) {
+    if (rx.status === "DISPENSED") {
       return res.json({
         success: false,
-        message:
-          "This prescription has already been dispensed.",
+        message: "This prescription has already been dispensed.",
       });
     }
 
-    if (
-      rx.status ===
-      "EXPIRED"
-    ) {
+    if (rx.status === "EXPIRED") {
       return res.json({
         success: false,
-        message:
-          "This prescription is expired and cannot be dispensed.",
+        message: "This prescription is expired and cannot be dispensed.",
       });
     }
 
-  
-    rx.status =
-      "DISPENSED";
-
-  
-    rx.dispensedByPharmacyId =
-      pharmacyId;
-
-    rx.dispensedAt =
-      new Date();
+    rx.status = "DISPENSED";
+    rx.dispensedByPharmacyId = pharmacyId;
+    rx.dispensedAt = new Date();
 
     await rx.save();
 
     return res.json({
       success: true,
-
-      message:
-        "Prescription marked as dispensed.",
-
-      prescriptionId:
-        rx._id,
+      message: "Prescription marked as dispensed.",
+      prescriptionId: rx._id,
     });
   } catch (error) {
-    console.error(
-      "dispensePrescription error:",
-      error,
-    );
+    console.error("dispensePrescription error:", error);
 
     return res.status(500).json({
       success: false,
-      message:
-        error.message ||
-        "Internal server error.",
+      message: error.message || "Internal server error.",
     });
   }
 };
 
-export const getPharmacyDispenseHistory =
-  async (req, res) => {
-    try {
-      const pharmacyId =
-        req.pharmacyId ||
-        req.body?.pharmacyId;
+// GET PHARMACY DISPENSE HISTORY
+export const getPharmacyDispenseHistory = async (req, res) => {
+  try {
+    const pharmacyId = req.pharmacyId || req.body?.pharmacyId;
 
-      if (!pharmacyId) {
-        return res.status(401).json({
-          success: false,
-          message: "Unauthorized.",
-        });
-      }
-
-      const dispensed =
-        await prescriptionPdfModel
-          .find({
-            dispensedByPharmacyId:
-              pharmacyId,
-
-            status: "DISPENSED",
-          })
-          .sort({
-            dispensedAt: -1,
-          })
-          .limit(20)
-          .populate(
-            "doctorId",
-            "name clinicAdd"
-          );
-
-      const formatted =
-        dispensed.map((rx) => ({
-          id: rx._id,
-
-          rxNumber:
-            rx.prescriptionCustomId,
-
-          patientName:
-            rx.patientName,
-
-          patientCustomId:
-            rx.patientCustomId,
-
-          doctorName:
-            rx.doctorId?.name ||
-            "Doctor",
-
-          dispensedAt:
-            rx.dispensedAt,
-
-          medications:
-            (rx.medicines || []).map(
-              (medicine) =>
-                medicine.medicineName
-            ),
-        }));
-
-      return res.status(200).json({
-        success: true,
-        dispensed: formatted,
-      });
-    } catch (error) {
-      console.error(
-        "getPharmacyDispenseHistory error:",
-        error
-      );
-
-      return res.status(500).json({
+    if (!pharmacyId) {
+      return res.status(401).json({
         success: false,
-        message:
-          error.message ||
-          "Unable to fetch dispense history.",
+        message: "Unauthorized.",
       });
     }
-  };
+
+    const dispensed = await prescriptionPdfModel
+      .find({
+        dispensedByPharmacyId: pharmacyId,
+        status: "DISPENSED",
+      })
+      .sort({
+        dispensedAt: -1,
+      })
+      .limit(20)
+      .populate("doctorId", "name clinicAdd");
+
+    const formatted = dispensed.map((rx) => ({
+      id: rx._id,
+      rxNumber: rx.prescriptionCustomId,
+      patientName: rx.patientName,
+      patientCustomId: rx.patientCustomId,
+      doctorName: rx.doctorId?.name || "Doctor",
+      dispensedAt: rx.dispensedAt,
+      medications: (rx.medicines || []).map(
+        (medicine) => medicine.medicineName,
+      ),
+    }));
+
+    return res.status(200).json({
+      success: true,
+      dispensed: formatted,
+    });
+  } catch (error) {
+    console.error("getPharmacyDispenseHistory error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Unable to fetch dispense history.",
+    });
+  }
+};

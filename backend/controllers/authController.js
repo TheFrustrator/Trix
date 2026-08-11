@@ -5,7 +5,7 @@ import diagnosisModel from "../models/diagnosisModel.js";
 import prescriptionPdfModel from "../models/prescriptionPdfModel.js";
 import transporter from "../config/nodemailer.js";
 
-
+// PATIENT REGISTER
 export const register = async (req, res) => {
   const { name, email, password, dob, phoneNumber } = req.body;
 
@@ -20,7 +20,6 @@ export const register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    // patientId
 
     const safeName = (name || "PATIENT")
       .replace(/\s+/g, "")
@@ -45,15 +44,13 @@ export const register = async (req, res) => {
       expiresIn: "7d",
     });
 
-    // console.log(email)
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      secure: true,
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    // sending welcome email
     const mailOptions = {
       from: process.env.SENDER_EMAIL,
       to: email,
@@ -63,62 +60,68 @@ export const register = async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
-    return res.json({ success: true, message: "User registered successfully" });
+    return res.json({
+      success: true,
+      token,
+      message: "User registered successfully",
+    });
   } catch (error) {
     return res.json({ success: false, message: error.message });
   }
 };
 
+// PATIENT LOGIN
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
     return res.json({
       success: false,
-      message: "Email and pasword are required",
+      message: "Email and password are required",
     });
   }
 
   try {
     const user = await userModel.findOne({ email });
 
-   
-
     if (!user) {
       return res.json({ success: false, message: "Invalid credentials" });
     }
 
-     if(!user.isVerified){
-      return res.json({success: false, message: "User is not verified"})
+    if (!user.isVerified) {
+      return res.json({ success: false, message: "User is not verified" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.json({ success: false, message: "invalid credentials" });
+      return res.json({ success: false, message: "Invalid credentials" });
     }
+
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      secure: true,
+      sameSite: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return res.json({ success: true });
+    return res.json({ success: true, token });
   } catch (error) {
     return res.json({ success: false, message: error.message });
   }
 };
 
+// PATIENT LOGOUT
 export const logout = async (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      secure: true,
+      sameSite: "none",
     });
 
     return res.json({ success: true, message: "Logged Out" });
@@ -127,9 +130,10 @@ export const logout = async (req, res) => {
   }
 };
 
+// SEND VERIFY OTP
 export const sendVerifyOtp = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const userId = req.userId || req.body?.userId;
 
     if (!userId) {
       return res.json({ success: false, message: "User ID is required" });
@@ -142,14 +146,12 @@ export const sendVerifyOtp = async (req, res) => {
     }
 
     if (user.isVerified) {
-      // Added missing 'return' keyword
       return res.json({ success: false, message: "Account already verified" });
     }
 
     const otp = String(Math.floor(100000 + Math.random() * 900000));
 
     user.verifyOTP = otp;
-    // Fixed 'date.now()' -> 'Date.now()'
     user.verifyOTPExpireAt = Date.now() + 24 * 60 * 60 * 1000;
 
     await user.save();
@@ -172,8 +174,10 @@ export const sendVerifyOtp = async (req, res) => {
   }
 };
 
+// VERIFY EMAIL
 export const verifyEmail = async (req, res) => {
-  const { userId, otp } = req.body;
+  const userId = req.userId || req.body?.userId;
+  const { otp } = req.body;
 
   if (!userId || !otp) {
     return res.json({ success: false, message: "Missing Details" });
@@ -204,7 +208,7 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
-// check user is authenticated
+// CHECK AUTHENTICATED
 export const isAuthenticated = async (req, res) => {
   try {
     return res.json({ success: true });
@@ -213,7 +217,7 @@ export const isAuthenticated = async (req, res) => {
   }
 };
 
-// Send Password Reset OTP
+// SEND RESET OTP
 export const sendResetOtp = async (req, res) => {
   const { email } = req.body;
 
@@ -231,7 +235,6 @@ export const sendResetOtp = async (req, res) => {
     const hashedOtp = await bcrypt.hash(rawOtp, 10);
 
     user.resetOTP = hashedOtp;
-    // Set expiry to 15 minutes
     user.resetOtpExpireAt = Date.now() + 15 * 60 * 1000;
 
     await user.save();
@@ -251,7 +254,7 @@ export const sendResetOtp = async (req, res) => {
   }
 };
 
-// Reset Password with OTP Verification
+// RESET PASSWORD
 export const resetPassword = async (req, res) => {
   const { email, otp, newPassword } = req.body;
 
@@ -269,7 +272,10 @@ export const resetPassword = async (req, res) => {
     }
 
     if (!user.resetOTP || user.resetOtpExpireAt < Date.now()) {
-      return res.json({ success: false, message: "OTP has expired or is invalid" });
+      return res.json({
+        success: false,
+        message: "OTP has expired or is invalid",
+      });
     }
 
     const isMatch = await bcrypt.compare(otp, user.resetOTP);
@@ -295,15 +301,13 @@ export const resetPassword = async (req, res) => {
 };
 
 // ---------- PATIENT DASHBOARD SUMMARY ----------
-// Extracts a calendar date out of free-text notes, e.g. "Refill on 27 Oct 2026"
-// Supports: "27 Oct 2026", "2026-10-27", "10/27/2026"
 function extractDateFromNotes(notes) {
   if (!notes || typeof notes !== "string") return null;
 
   const patterns = [
-    /\b(\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4})\b/, // 27 Oct 2026
-    /\b(\d{4}-\d{2}-\d{2})\b/, // 2026-10-27
-    /\b(\d{1,2}\/\d{1,2}\/\d{4})\b/, // 10/27/2026
+    /\b(\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4})\b/,
+    /\b(\d{4}-\d{2}-\d{2})\b/,
+    /\b(\d{1,2}\/\d{1,2}\/\d{4})\b/,
   ];
 
   for (const pattern of patterns) {
@@ -320,7 +324,7 @@ function extractDateFromNotes(notes) {
 
 export const getDashboardSummary = async (req, res) => {
   try {
-    const userId = req.userId || req.body?.userId; // confirmed set by userAuth middleware
+    const userId = req.userId || req.body?.userId;
 
     if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -328,27 +332,26 @@ export const getDashboardSummary = async (req, res) => {
 
     const patient = await userModel.findById(userId);
     if (!patient) {
-      return res.status(404).json({ success: false, message: "Patient not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Patient not found" });
     }
 
     const patientCustomId = patient.patientId;
 
-    // Every diagnosis record IS a visit — one is created per doctor visit.
     const diagnoses = await diagnosisModel
       .find({ patientCustomId })
       .sort({ date: -1, createdAt: -1 })
       .populate("doctorId", "name clinicAdd Specialization");
 
-    // ---- Active Condition ----
     const latestDiagnosis = diagnoses[0] || null;
     const activeCondition = latestDiagnosis
       ? {
           name: latestDiagnosis.diagnosis,
-          state: "Ongoing", // no severity/status field exists on diagnosisModel yet
+          state: "Ongoing",
         }
       : null;
 
-    // ---- Last Visit ----
     const lastVisit = latestDiagnosis
       ? {
           date: latestDiagnosis.date,
@@ -357,7 +360,6 @@ export const getDashboardSummary = async (req, res) => {
         }
       : null;
 
-    // ---- Upcoming Refill ----
     const latestPrescription = await prescriptionPdfModel
       .findOne({ patientCustomId })
       .sort({ createdAt: -1 });
@@ -367,15 +369,13 @@ export const getDashboardSummary = async (req, res) => {
       const refillDate = extractDateFromNotes(latestPrescription.notes);
       if (refillDate) {
         upcomingRefill = {
-          medicineName: latestPrescription.medicines?.[0]?.medicineName || "Medicine",
+          medicineName:
+            latestPrescription.medicines?.[0]?.medicineName || "Medicine",
           reliefDate: refillDate.toISOString().split("T")[0],
         };
       }
     }
-    // upcomingRefill stays null if no date pattern was found in the notes —
-    // the frontend shows "No refill scheduled" in that case.
 
-    // ---- Doctor Visit History (oldest -> newest, left to right on the timeline) ----
     const visits = diagnoses
       .slice()
       .reverse()
@@ -412,8 +412,6 @@ export const getDashboardSummary = async (req, res) => {
 };
 
 // ---------- PATIENT PRESCRIPTION HISTORY ----------
-// Returns the patient's 6 most recent prescriptions, formatted for the
-// Prescription History cards.
 export const getPatientPrescriptions = async (req, res) => {
   try {
     const userId = req.userId || req.body?.userId;
@@ -423,7 +421,9 @@ export const getPatientPrescriptions = async (req, res) => {
 
     const patient = await userModel.findById(userId);
     if (!patient) {
-      return res.status(404).json({ success: false, message: "Patient not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Patient not found" });
     }
 
     const patientCustomId = patient.patientId;
@@ -453,10 +453,7 @@ export const getPatientPrescriptions = async (req, res) => {
   }
 };
 
-// Fetch a single prescription's full details for the PDF view — patient side.
-// Mirrors doctorController's getCombinedPrescriptionDetails, but authenticates
-// via userAuth and confirms the prescription actually belongs to this patient
-// before returning anything.
+// FETCH PATIENT PRESCRIPTION DETAILS
 export const getPatientPrescriptionDetails = async (req, res) => {
   try {
     const userId = req.userId || req.body?.userId;
@@ -466,28 +463,41 @@ export const getPatientPrescriptionDetails = async (req, res) => {
 
     const { prescriptionId } = req.params;
     if (!prescriptionId || !prescriptionId.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ success: false, message: "Invalid prescription ID" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid prescription ID" });
     }
 
     const patient = await userModel.findById(userId);
     if (!patient) {
-      return res.status(404).json({ success: false, message: "Patient not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Patient not found" });
     }
 
     const rx = await prescriptionPdfModel
       .findById(prescriptionId)
-      .populate("doctorId", "name clinicAdd Specialization phoneNumber regNo");
+      .populate(
+        "doctorId",
+        "name clinicAdd Specialization phoneNumber regNo"
+      );
 
     if (!rx) {
-      return res.status(404).json({ success: false, message: "Prescription record not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Prescription record not found" });
     }
 
-    // Ownership check — a patient can only view their own prescriptions.
     if (rx.patientCustomId !== patient.patientId) {
-      return res.status(403).json({ success: false, message: "Not authorized to view this prescription" });
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: "Not authorized to view this prescription",
+        });
     }
 
-    const genderLabel = "N/A"; // userModel has no gender field yet
+    const genderLabel = "N/A";
 
     return res.json({
       success: true,
