@@ -17,10 +17,9 @@ const server = http.createServer(app);
 
 const PORT = process.env.PORT || 3000;
 
-// Render sets origins dynamically; handle undefined during build
-const allowedOrigins = process.env.FRONTEND_PORT 
-  ? [process.env.FRONTEND_PORT] 
-  : ["http://localhost:5173"];
+connectDB();
+
+const allowedOrigins = [process.env.FRONTEND_PORT];
 
 // Initialize Socket.io with CORS
 const io = new Server(server, {
@@ -61,20 +60,6 @@ app.use("/api/doctor", doctorRouter);
 app.use("/api/patient", patientRouter);
 app.use("/api/pharmacy", pharmacyRouter);
 
-// Start server wrapped in async DB connection
-const startServer = async () => {
-  try {
-    await connectDB();
-    console.log("Database connected successfully");
-    
-    // ✅ CRITICAL FIX: Listen on 'server', not 'app' when using Socket.io
-    server.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error("Failed to connect to DB / Start server:", error);
-    process.exit(1);
-  }
-};
-
-startServer();
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
