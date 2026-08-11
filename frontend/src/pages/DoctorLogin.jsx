@@ -36,10 +36,10 @@ const DoctorLogin = () => {
         // 2. Set logged in state
         setIsLOggedin(true);
 
+        navigate("/doctor-dashboard", { replace: true });
         toast.success(`Welcome back ${data.name || "Doctor"}`);
 
         // 3. Navigate directly to doctor dashboard with replace
-        navigate("/doctor-dashboard", { replace: true });
       } else {
         toast.error(data.message || "Login failed.");
       }

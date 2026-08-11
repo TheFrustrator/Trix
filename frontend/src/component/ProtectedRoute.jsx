@@ -13,9 +13,7 @@ export const ProtectedRoute = () => {
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
 
-          <p className="text-gray-600">
-            Authenticating session...
-          </p>
+          <p className="text-gray-600">Authenticating session...</p>
         </div>
       </div>
     );
@@ -23,12 +21,11 @@ export const ProtectedRoute = () => {
 
   // Authentication check has finished
   if (!isLoggedin || !userData) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/patient-login" replace />;
   }
 
   return <Outlet />;
 };
-
 
 export const DoctorProtectedRoute = () => {
   const { isLoggedin, doctorData, loading } = useContext(AppContext);
@@ -40,16 +37,14 @@ export const DoctorProtectedRoute = () => {
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
 
-          <p className="text-gray-600">
-            Authenticating doctor session...
-          </p>
+          <p className="text-gray-600">Authenticating doctor session...</p>
         </div>
       </div>
     );
   }
 
   if (!isLoggedin || !doctorData) {
-    return <Navigate to="/doctor/login" replace />;
+    return <Navigate to="/doctor-login" replace />;
   }
 
   return <Outlet />;
