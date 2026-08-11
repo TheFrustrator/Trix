@@ -491,34 +491,32 @@ export const getDoctorData = async (req, res) => {
 
 export const saveDiagnosis = async (req, res) => {
   try {
-    const doctorId = req.doctorId || req.userId; // Extracted from doctorAuth middleware
+    const doctorId = req.doctorId || req.userId;
     const { patientCustomId, diagnosis, notes, date } = req.body;
 
     if (!doctorId) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Doctor authentication required" });
+      return res.status(401).json({
+        success: false,
+        message: "Doctor authentication missing.",
+      });
     }
 
     if (!patientCustomId || !diagnosis) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Missing patient ID or diagnosis details",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Patient Custom ID and diagnosis text are required.",
+      });
     }
 
-    // Handle File Upload safely if report attached
+    // Process report file if uploaded via Multer
     let reportUrl = "";
     if (req.file) {
-      // If using Cloudinary with memory storage buffer:
-      const fileBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
-      // const uploadResult = await cloudinary.uploader.upload(fileBase64);
-      // reportUrl = uploadResult.secure_url;
-
-      // Or if saving file path locally:
-      reportUrl = req.file.path || req.file.filename || "";
+      if (req.file.buffer) {
+        // If using memory storage for Multer
+        reportUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+      } else {
+        reportUrl = req.file.path || req.file.filename || "";
+      }
     }
 
     const newDiagnosis = new diagnosisModel({
@@ -535,13 +533,13 @@ export const saveDiagnosis = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "Diagnosis saved successfully!",
-      diagnosisData: newDiagnosis,
+      diagnosis: newDiagnosis,
     });
   } catch (error) {
     console.error("Error in saveDiagnosis:", error);
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to save diagnosis",
+      message: error.message || "Internal server error while saving diagnosis.",
     });
   }
 };
