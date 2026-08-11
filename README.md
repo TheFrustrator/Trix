@@ -2,7 +2,7 @@
 
 **One ID. Your Complete Medical Record.**
 
-MediLink is a consent-driven digital health record platform that connects **Patients**, **Doctors**, and **Pharmacies** around a single unique Patient ID. Patients own and control their medical data at all times — doctors get temporary, permission-based access only during an active consultation, and pharmacies get a strictly read-only view limited to the current valid prescription.
+MediLink is a consent-driven digital health record platform that connects **Patients**, **Doctors**, and **Pharmacies** around a single unique Patient ID. Patients own and control their medical dat[...]
 
 Built for the **AI in Healthcare** track hackathon submission.
 
@@ -25,7 +25,7 @@ Built for the **AI in Healthcare** track hackathon submission.
 
 ## 🏥 Problem Statement
 
-Patient medical history is fragmented across hospitals, clinics, and pharmacies. Patients repeat their history verbally at every visit, carry physical prescriptions, and have no reliable way to track their diagnosis timeline. Pharmacies have no trustworthy way to verify whether a prescription is genuine or current. There is no unified, patient-controlled, consent-based system that lets a patient own their data while granting temporary, revocable access to healthcare providers.
+Patient medical history is fragmented across hospitals, clinics, and pharmacies. Patients repeat their history verbally at every visit, carry physical prescriptions, and have no reliable way to tr[...]
 
 ## 💡 Solution Overview
 
@@ -93,7 +93,7 @@ MediLink solves this with a **consent-first, minimal-access, time-bound permissi
 |---|---|
 | Patient Sign Up | <img width="1376" height="768" alt="01_Paitent_signup_page" src="https://github.com/user-attachments/assets/cbbdadb9-e0e8-44d1-b53c-cac8cd0e749b" />
  |
-| Patient Dashboard (with Doctor Visit History timeline) | <img width="1376" height="768" alt="02_Paitent Dashboard" src="https://github.com/user-attachments/assets/dffa3c63-036a-4e0e-bcba-78db598884db" />
+| Patient Dashboard (with Doctor Visit History timeline) | <img width="1376" height="768" alt="02_Paitent Dashboard" src="https://github.com/user-attachments/assets/dffa3c63-036a-4e0e-bcba-78db598884d[...]" 
  |
 | Access Requests (Accept/Deny + Active Sessions) | <img width="1376" height="768" alt="03_Request_access_page" src="https://github.com/user-attachments/assets/8a1be9c2-de1e-4aa2-af89-52e422e72100" />
  |
@@ -115,9 +115,9 @@ MediLink solves this with a **consent-first, minimal-access, time-bound permissi
  |
 | Prescription Builder | <img width="1376" height="768" alt="06_prescription_builder" src="https://github.com/user-attachments/assets/0f17ca36-c45f-4744-a765-485544f31999" />
  |
-| Digitally Verified Prescription (PDF view) | <img width="1376" height="768" alt="07_1_After_clicking the view pdf" src="https://github.com/user-attachments/assets/ef1fb761-f4d9-4b1b-811a-9092df57495a" />
+| Digitally Verified Prescription (PDF view) | <img width="1376" height="768" alt="07_1_After_clicking the view pdf" src="https://github.com/user-attachments/assets/ef1fb761-f4d9-4b1b-811a-9092df57495[...]" />
  |
-| Prescription Submitted Confirmation |<img width="1376" height="768" alt="07_Prescription Submitted confirmation" src="https://github.com/user-attachments/assets/dd99a94a-6590-4c83-be2a-c3b0792bc83e" />
+| Prescription Submitted Confirmation |<img width="1376" height="768" alt="07_Prescription Submitted confirmation" src="https://github.com/user-attachments/assets/dd99a94a-6590-4c83-be2a-c3b0792bc83e"[...]
  |
 
 ### 💊 Pharmacy Flow
@@ -131,7 +131,7 @@ MediLink solves this with a **consent-first, minimal-access, time-bound permissi
  |
 | Prescription Result Screen | <img width="1376" height="768" alt="03_Prescription Result screen" src="https://github.com/user-attachments/assets/9af06d99-1b90-453d-b01d-db7102e150cc" />
  |
-| Direct View — Full Prescription | <img width="1408" height="768" alt="04_Prescription view after clicking on Direct view" src="https://github.com/user-attachments/assets/69cf976c-8ef6-4e78-bbb3-58fc3959fcce" />
+| Direct View — Full Prescription | <img width="1408" height="768" alt="04_Prescription view after clicking on Direct view" src="https://github.com/user-attachments/assets/69cf976c-8ef6-4e78-bbb3-58[...]" />
  |
 
 ---
@@ -223,7 +223,7 @@ medilink/
 │   │   ├── hooks/
 │   │   ├── context/                # Auth context, Access-token context
 │   │   ├── services/                # API call wrappers (axios)
-│   │   └── App.jsx
+│   │   │   └── App.jsx
 │   └── package.json
 │
 ├── server/                          # Backend (Node/Express)
@@ -237,46 +237,4 @@ medilink/
 │   │   ├── models/
 │   │   │   ├── User.js
 │   │   │   ├── AccessRequest.js
-│   │   │   ├── MedicalHistory.js
-│   │   │   ├── Prescription.js
-│   │   │   └── AuditLog.js
-│   │   ├── routes/
-│   │   ├── middleware/
-│   │   │   ├── auth.js              # JWT verification
-│   │   │   ├── rbac.js              # Role-based access control
-│   │   │   └── rateLimiter.js
-│   │   ├── services/
-│   │   │   ├── pdfGenerator.js
-│   │   │   ├── notificationService.js
-│   │   │   └── aiService.js         # LLM API integration
-│   │   ├── utils/
-│   │   └── app.js
-│   ├── prisma/ (or migrations/)     # DB schema & migrations
-│   └── package.json
-│
-├── screenshots/                     # All UI mockups (referenced in this README)
-├── docs/
-│   └── PROJECT_SYNOPSIS.md          # Full hackathon synopsis document
-├── .env.example
-├── README.md
-└── LICENSE
-```
-
----
-
-
-## 🔐 Security Features
-
-Health data demands strong security by default — this is a core focus of MediLink, not an afterthought:
-
-1. **Role-Based Access Control (RBAC)** enforced at the API layer, not just hidden in the UI.
-2. **Consent-based, time-bound access tokens** — a doctor's write access is a short-lived JWT tied to an `access_requests` record, validated on every request.
-3. **Encryption** — HTTPS/TLS in transit; encrypted sensitive fields at rest.
-4. **Least privilege for pharmacy** — a dedicated, narrow API endpoint returns only the active prescription object, never the full patient record.
-5. **Full audit logging** — every view/edit is logged with actor ID, timestamp, and action, visible to the patient for transparency.
-6. **Password security** via bcrypt/argon2 hashing.
-7. **Input validation & sanitization** to prevent SQL injection/XSS.
-8. **Rate limiting** on login and Patient-ID lookup endpoints to prevent brute-force/ID enumeration.
-9. **Instant session invalidation** — tokens are blacklisted server-side the moment access is revoked.
-10. **Digitally signed, tamper-verified prescriptions** — QR-coded and hash-verifiable, so pharmacies can confirm authenticity.
-
+,
