@@ -90,7 +90,7 @@ const PharmacySignUp = () => {
 
       // Step 1: Register pharmacy
       const { data: regData } = await axios.post(
-        `${baseUrl}/api/pharmacy/register`,
+        `${baseUrl}/api/pharmacy/pharmacy-signup`,
         {
           shopName,
           ownerName,

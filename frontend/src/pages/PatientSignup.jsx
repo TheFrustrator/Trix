@@ -37,7 +37,7 @@ const PatientSignup = () => {
 
       // Step 1: Register patient user
       const { data: regData } = await axios.post(
-        `${baseUrl}/api/auth/register`,
+        `${baseUrl}/api/auth/patient-signup`,
         { name, email, phoneNumber, password, dob }
       );
 

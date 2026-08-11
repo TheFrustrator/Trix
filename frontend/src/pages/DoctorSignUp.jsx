@@ -92,7 +92,7 @@ const DoctorSignUp = () => {
 
       // Step 1: Register doctor
       const { data: regData } = await axios.post(
-        `${baseUrl}/api/doctor/register`,
+        `${baseUrl}/api/doctor/doctor-signup`,
         {
           name,
           email,
