@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Icons, loginRoles, signupRole } from "../assets/assets";
+import { Icons, signupRole } from "../assets/assets";
 
 const UserSighUpHeader = ({ isSlidebarOpen, setIsSlidebarOpen }) => {
   const navigate = useNavigate();

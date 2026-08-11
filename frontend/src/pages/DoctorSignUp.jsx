@@ -1,5 +1,5 @@
 import React, { useRef, useState, useContext } from "react";
-import UserLoginHeader from "./../cards/UserLoginHeader";
+
 import UserSighUpHeader from "../cards/userSighUpHeader";
 import { Icons } from "../assets/assets";
 import HandleUploadCard from "../cards/handleUploadCard";
@@ -46,7 +46,7 @@ const DoctorSignUp = () => {
     try {
       const base64String = await convertFileToBase64(file);
       setUploadLicense(base64String); // Set Base64 string to hook
-      setLicenseFileName(file.name);   // Set name for UI display
+      setLicenseFileName(file.name); // Set name for UI display
     } catch (error) {
       toast.error("Failed to read file. Please try again.");
     }
@@ -103,7 +103,7 @@ const DoctorSignUp = () => {
           clinicAdd: ClinicAdd,
           Specialization,
           uploadLicense, // Base64 Data URL String
-        }
+        },
       );
 
       if (!regData.success) {
@@ -112,7 +112,7 @@ const DoctorSignUp = () => {
 
       // Step 2: Request verification OTP
       const { data: otpData } = await axios.post(
-        `${backendUrl}/api/doctor/send-verify-otp`
+        `${backendUrl}/api/doctor/send-verify-otp`,
       );
 
       if (otpData.success) {
