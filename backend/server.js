@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 3000;
 
 connectDB();
 
-const allowedOrigins = ["http://localhost:5173"];
+const allowedOrigins = [process.env.FRONTEND_PORT];
 
 // Initialize Socket.io with CORS
 const io = new Server(server, {
