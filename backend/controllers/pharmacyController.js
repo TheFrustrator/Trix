@@ -7,7 +7,7 @@ import userModel from "../models/userModel.js";
 import doctorModel from "../models/doctorModel.js";
 import transporter from "../config/nodemailer.js";
 
-
+// PHARMACY SIGNIN
 export const pharmacyRegister = async (req, res) => {
   const {
     shopName,
@@ -110,7 +110,7 @@ export const pharmacyRegister = async (req, res) => {
   }
 };
 
-
+// PHARMACY REGISTRATION
 export const pharmacyLogin = async (req, res) => {
   const { email, password } = req.body;
 
@@ -179,6 +179,7 @@ export const pharmacyLogin = async (req, res) => {
 };
 
 
+// PHARMACY LOGOUT
 export const pharmacyLogout = async (req, res) => {
   try {
     res.clearCookie("token", {
@@ -202,8 +203,7 @@ export const pharmacyLogout = async (req, res) => {
   }
 };
 
-
-
+// SEND OTP TO THE REGISTER EMAIL
 export const sendVerifyOtp = async (req, res) => {
   try {
     const pharmacyId =
@@ -262,6 +262,7 @@ export const sendVerifyOtp = async (req, res) => {
   }
 };
 
+// VERIFY OTP VIA OTP SEND TO EMAIL
 export const verifyEmail = async (req, res) => {
   const pharmacyId =
     req.pharmacyId || req.body?.pharmacyId;
@@ -321,8 +322,7 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
-
-
+// CHECK AUTHENTICATON FOR SECURE ROUTES
 export const isAuthenticated = async (req, res) => {
   try {
     return res.json({
@@ -336,7 +336,7 @@ export const isAuthenticated = async (req, res) => {
   }
 };
 
-
+// SEND OTP FOR RESET PASSWORD
 export const sendResetOtp = async (req, res) => {
   const { email } = req.body;
 
@@ -390,6 +390,8 @@ export const sendResetOtp = async (req, res) => {
   }
 };
 
+
+// VERIFY EMAIL VIA OTP AND SAVED NEW OTP
 export const resetPassword = async (req, res) => {
   const { email, otp, newPassword } = req.body;
 
@@ -454,7 +456,7 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-
+// FETCH PHARMACY DATA TO TEH APPCONTEXT 
 export const getPharmacyData = async (req, res) => {
   try {
     const pharmacyId =
@@ -491,11 +493,7 @@ export const getPharmacyData = async (req, res) => {
 };
 
 
-
-// ============================================================
-// GET LATEST PRESCRIPTION USING PATIENT CUSTOM ID
-// ============================================================
-
+// CHECK IF THE PRESCRIPTION MEDICINES ARE DISPENSED OR NOT
 export const getPrescriptionForDispense = async (
   req,
   res,
@@ -512,14 +510,7 @@ export const getPrescriptionForDispense = async (
       });
     }
 
-    /*
-     * IMPORTANT:
-     *
-     * This is PATIENT CUSTOM ID.
-     *
-     * Example:
-     * P-4041-XYZ
-     */
+   
     const { patientId } =
       req.params;
 
@@ -537,12 +528,7 @@ export const getPrescriptionForDispense = async (
     const cleanPatientId =
       patientId.trim();
 
-    /*
-     * Find the latest prescription
-     * using patientCustomId.
-     *
-     * NO prescription ID is used here.
-     */
+    
     const latestPrescription =
       await prescriptionPdfModel
         .findOne({
@@ -569,12 +555,7 @@ export const getPrescriptionForDispense = async (
       });
     }
 
-    /*
-     * Patient information.
-     *
-     * patientCustomId comes directly from
-     * prescriptionPdfModel.
-     */
+
     const patient = {
       id:
         latestPrescription.patientId?._id ||
@@ -597,9 +578,7 @@ export const getPrescriptionForDispense = async (
         "N/A",
     };
 
-    /*
-     * Doctor information.
-     */
+   
     const doctor = {
       id:
         latestPrescription.doctorId?._id ||
@@ -626,9 +605,7 @@ export const getPrescriptionForDispense = async (
         "N/A",
     };
 
-    /*
-     * Prescription.
-     */
+
     const prescription = {
       _id:
         latestPrescription._id,
@@ -696,10 +673,8 @@ export const getPrescriptionForDispense = async (
   }
 };
 
-// ============================================================
-// GET ONE PRESCRIPTION BY MONGODB PRESCRIPTION ID
-// ============================================================
 
+// GIVE THE PRESCRIPTION DETAILS
 export const getPrescriptionDetails = async (req, res) => {
   try {
     const pharmacyId = req.pharmacyId;
@@ -731,14 +706,6 @@ export const getPrescriptionDetails = async (req, res) => {
       });
     }
 
-    /*
-     * Find the exact prescription.
-     *
-     * Do NOT filter by status here.
-     *
-     * This is important because after dispensing,
-     * the pharmacist should still be able to open the PDF.
-     */
     const prescription =
       await prescriptionPdfModel
         .findById(prescriptionId)
@@ -861,9 +828,6 @@ export const getPrescriptionDetails = async (req, res) => {
 };
 
 
-// ============================================================
-// DISPENSE PRESCRIPTION
-// ============================================================
 
 export const dispensePrescription = async (
   req,
@@ -897,14 +861,6 @@ export const dispensePrescription = async (
       });
     }
 
-    /*
-     * Here we DO use MongoDB prescription _id.
-     *
-     * This is correct because the pharmacist
-     * has already searched by Patient ID and
-     * we now know exactly which prescription
-     * was displayed.
-     */
     const rx =
       await prescriptionPdfModel.findById(
         prescriptionId,
@@ -940,21 +896,11 @@ export const dispensePrescription = async (
       });
     }
 
-    /*
-     * CORRECT STATUS
-     *
-     * Schema:
-     * ACTIVE
-     * DISPENSED
-     * EXPIRED
-     */
+  
     rx.status =
       "DISPENSED";
 
-    /*
-     * These fields only work if they
-     * exist in your schema.
-     */
+  
     rx.dispensedByPharmacyId =
       pharmacyId;
 
@@ -986,11 +932,6 @@ export const dispensePrescription = async (
     });
   }
 };
-
-
-// ============================================================
-// PHARMACY DISPENSE HISTORY
-// ============================================================
 
 export const getPharmacyDispenseHistory =
   async (req, res) => {

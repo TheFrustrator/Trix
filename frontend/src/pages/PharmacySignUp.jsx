@@ -13,6 +13,7 @@ const PharmacySignUp = () => {
   const [isSlidebarOpen, setIsSlidebarOpen] = useState();
    const { backendUrl, setIsLOggedin, getPharmacyData } = useContext(AppContext);
    const navigate = useNavigate()
+    const [loading, setLoading] = useState(false);
 
   const [shopName, setShopName] = useState("");
   const [ownerName, setOwnerName] = useState("");
@@ -78,6 +79,7 @@ const PharmacySignUp = () => {
       );
 
       if (!regData.success) {
+        setLoading(false)
         return toast.error(regData.message || "Registration failed");
       }
 
@@ -220,8 +222,12 @@ const PharmacySignUp = () => {
                   valueUser="Pharmacy"
                 />
               </div>
-              <button className="bg-border text-white w-full py-2 rounded-md text-base font-semibold my-1 hover:bg-blue-600 cursor-pointer">
-                Submit for Verification
+             <button
+                type="submit"
+                disabled={loading}
+                className="bg-blue-500 text-white w-full py-2.5 rounded-md text-base font-semibold mt-3 hover:bg-blue-600 transition-colors disabled:bg-blue-300 cursor-pointer"
+              >
+                {loading ? "Creating Account..." : "Create Account"}
               </button>
             </div>
           </div>

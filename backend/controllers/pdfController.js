@@ -5,8 +5,8 @@ import diagnosisModel from "../models/diagnosisModel.js";
 import recentPatientModel from "../models/recentPatientModel.js";
 import mongoose from "mongoose";
 
-// ---------- SAVE PRESCRIPTION ----------
-// It writes to prescriptionPdfModel — the same model getCombinedPrescriptionDetails reads from.
+
+// It writes to prescriptionPdfModel 
 export const savePrescription = async (req, res) => {
   try {
     const docId = req.docId || req.body?.docId;
@@ -27,8 +27,6 @@ export const savePrescription = async (req, res) => {
       return res.status(404).json({ success: false, message: "Doctor not found" });
     }
 
-    // patientCustomId is matched against userModel.patientId — that's the only
-    // field userSchema actually has for this purpose.
     const patient = await userModel.findOne({ patientId: patientCustomId });
 
     const latestDiagnosis = await diagnosisModel
@@ -44,16 +42,9 @@ export const savePrescription = async (req, res) => {
     const pdfFileName = `Prescription_${cleanCustomId}_${formattedIssueDate}.pdf`;
     const prescriptionCustomId = `RX-${cleanCustomId}-${Date.now().toString().slice(-4)}`;
 
-    // patientAgeGender is stored as a formatted string on this model, so build
-    // userModel has no `gender`
-    // field, so gender always falls back to "N/A" until add one.
     const ageLabel = patient?.dob ? calculateAge(patient.dob) : "N/A";
     const genderLabel = "N/A"; // userModel has no gender field --- souvik check this , we should add a gender field also it important  
 
-    // Medicines already arrive from the frontend with the exact keys the
-    // schema requires (medicineName, dosages, frequency, timing, duration,
-    // totalQuantity), so no renaming needed — but i validate each item so a
-    // malformed row fails loudly instead of silently saving as blank.
     for (const [i, m] of medicines.entries()) {
       if (!m.medicineName || !m.dosages || !m.frequency || !m.timing || !m.duration || !m.totalQuantity) {
         return res.status(400).json({
@@ -181,7 +172,7 @@ export const getPrescriptionsByPatientId = async (req, res) => {
   }
 };
 
-// MAIN: COMBINED FETCH (what PdfPrescriptionView.jsx actually calls) 
+// COMBINED FETCH 
 function calculateAge(dob) {
   if (!dob) return "N/A";
   const birthDate = new Date(dob);
@@ -195,6 +186,7 @@ function calculateAge(dob) {
   return age >= 0 ? `${age} Y` : "N/A";
 }
 
+// CREATE A UNION OF PRESCRIPTIONS AND DIAGNOSIS 
 export const getCombinedPrescriptionDetails = async (req, res) => {
   try {
     const { prescriptionId } = req.params;
@@ -223,8 +215,7 @@ export const getCombinedPrescriptionDetails = async (req, res) => {
       issueDate || (createdAt ? new Date(createdAt).toISOString().split("T")[0] : new Date().toISOString().split("T")[0]);
 
     const patientAge = calculateAge(patient?.dob);
-    // userModel has no `gender` field in the schema — this will
-    // always read "N/A" until add `gender` to userSchema and populate it.
+
     const gender = patient?.gender || "N/A";
 
     return res.json({

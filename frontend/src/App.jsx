@@ -30,6 +30,7 @@ import {
 import PharmacyEmailVerify from "./pages/PharmacyEmailVerify";
 import PharmacyForgetPassword from "./pages/PharmacyForgetPassword";
 import PharmacyProtectedRoute from "./component/PharmacyProtectedRoute";
+import PrescriptionPDF from "./component/PrescriptionPDF";
 
 const App = () => {
   return (
@@ -67,12 +68,20 @@ const App = () => {
         />
 
         {/* Pharmacy Controls */}
+
         <Route element={<PharmacyProtectedRoute />}>
           <Route path="/pharmacy-dashboard" element={<PharmacyDashboard />} />
 
+          {/* SEARCH RESULT / PRESCRIPTION SUMMARY */}
           <Route
             path="/pharmacy-prescription-view"
             element={<PrescriptionView />}
+          />
+
+          {/* ACTUAL PDF */}
+          <Route
+            path="/pharmacy-prescription-view/:prescriptionId"
+            element={<PdfPrescriptionView />}
           />
         </Route>
 

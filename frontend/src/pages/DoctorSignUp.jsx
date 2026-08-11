@@ -21,6 +21,8 @@ const DoctorSignUp = () => {
   const [ClinicAdd, setClinicAdd] = useState("");
   const [Specialization, setSpecialization] = useState("");
 
+  const [loading, setLoading] = useState(false);
+
   // Base64 string version of the file
   const [uploadLicense, setUploadLicense] = useState("");
   // Stores original file name for display in UI
@@ -107,6 +109,7 @@ const DoctorSignUp = () => {
       );
 
       if (!regData.success) {
+        setLoading(false);
         return toast.error(regData.message || "Registration failed");
       }
 
@@ -150,7 +153,7 @@ const DoctorSignUp = () => {
             <div>
               <img
                 className="w-full md:w-[300px]"
-                src={Icons.pharmacisSU}
+                src={Icons.doctorSU}
                 alt=""
               />
             </div>
@@ -257,8 +260,12 @@ const DoctorSignUp = () => {
                 />
               </div>
 
-              <button className="bg-border text-white w-full py-2 rounded-md text-base font-semibold my-1">
-                Submit for Verification
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-blue-500 text-white w-full py-2.5 rounded-md text-base font-semibold mt-3 hover:bg-blue-600 transition-colors disabled:bg-blue-300 cursor-pointer"
+              >
+                {loading ? "Creating Account..." : "Create Account"}
               </button>
             </div>
           </div>
