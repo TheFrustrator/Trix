@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import UserLoginHeader from "../cards/UserLoginHeader";
 import LoginCard from "../cards/LoginCard";
-import { useContext } from "react";
 import { AppContext } from "../context/AppContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -9,11 +8,12 @@ import { toast } from "react-toastify";
 
 const PharmacyLogin = () => {
   const [isSlidebarOpen, setIsSlidebarOpen] = useState(false);
-  const { backendUrl, setIsLOggedin, getDoctorData } = useContext(AppContext);
+  const { backendUrl, pharmacyLoginSuccess } = useContext(AppContext);
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const onSubmitHandler = async (event) => {
     event.preventDefault();
     try {
@@ -25,22 +25,14 @@ const PharmacyLogin = () => {
 
       const { data } = await axios.post(
         `${baseUrl}/api/pharmacy/pharmacy-login`,
-        {
-          email,
-          password,
-        },
+        { email, password }
       );
 
       if (data.success) {
-        // 1. Fetch doctor data into AppContext first
-        await getDoctorData();
-
-        // 2. Set logged in state
-        setIsLOggedin(true);
+        // Save token & refresh pharmacy context state
+        await pharmacyLoginSuccess(data.token);
 
         toast.success(`Welcome back ${data.name || "Pharmacy"}`);
-
-        // 3. Navigate directly to doctor dashboard with replace
         navigate("/pharmacy-dashboard", { replace: true });
       } else {
         toast.error(data.message || "Login failed.");
@@ -61,7 +53,6 @@ const PharmacyLogin = () => {
         isSlidebarOpen={isSlidebarOpen}
         setIsSlidebarOpen={setIsSlidebarOpen}
       />
-
       <LoginCard
         email={email}
         setEmail={setEmail}

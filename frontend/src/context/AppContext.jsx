@@ -15,20 +15,34 @@ export const AppContextProvider = (props) => {
   const [doctorData, setDoctorData] = useState(null);
   const [pharmacyData, setPharmacyData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activePatientCustomId, setActivePatientCustomId] =
-    useState(null);
+  const [activePatientCustomId, setActivePatientCustomId] = useState(null);
+
   const baseUrl = backendUrl?.endsWith("/")
     ? backendUrl.slice(0, -1)
     : backendUrl;
 
-  // Send cookies with every axios request
+  // Configure Axios defaults & Interceptors
   axios.defaults.withCredentials = true;
+
+  // Add an Axios Request Interceptor to dynamically attach the token on every request
+  useEffect(() => {
+    const interceptor = axios.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem("token");
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    return () => axios.interceptors.request.eject(interceptor);
+  }, []);
 
   const getUserData = async () => {
     try {
-      const { data } = await axios.get(
-        `${baseUrl}/api/user/data`
-      );
+      const { data } = await axios.get(`${baseUrl}/api/user/data`);
       if (data.success) {
         setUserData(data.userData);
         return true;
@@ -37,75 +51,53 @@ export const AppContextProvider = (props) => {
       return false;
     } catch (error) {
       setUserData(null);
-
       console.log(
-        "User session:",
+        "User session error:",
         error.response?.data?.message || error.message
       );
-
       return false;
     }
   };
 
-
   const getDoctorData = async () => {
     try {
-      const { data } = await axios.get(
-        `${baseUrl}/api/doctor/doctor-data`
-      );
-
+      const { data } = await axios.get(`${baseUrl}/api/doctor/doctor-data`);
       if (data.success) {
         setDoctorData(data.userData || data.doctorData);
         return true;
       }
-
       setDoctorData(null);
       return false;
     } catch (error) {
       setDoctorData(null);
-
       console.log(
-        "Doctor session:",
+        "Doctor session error:",
         error.response?.data?.message || error.message
       );
-
       return false;
     }
   };
-
-
 
   const getPharmacyData = async () => {
     try {
-      const { data } = await axios.get(
-        `${baseUrl}/api/pharmacy/pharmacy-data`
-      );
-
+      const { data } = await axios.get(`${baseUrl}/api/pharmacy/pharmacy-data`);
       if (data.success) {
         setPharmacyData(
-          data.pharmacyData ||
-            data.userData ||
-            data.data
+          data.pharmacyData || data.userData || data.data
         );
-
         return true;
       }
-
       setPharmacyData(null);
       return false;
     } catch (error) {
       setPharmacyData(null);
-
       console.log(
-        "Pharmacy session:",
+        "Pharmacy session error:",
         error.response?.data?.message || error.message
       );
-
       return false;
     }
   };
-
-
 
   const restoreSession = async () => {
     setLoading(true);
@@ -113,7 +105,6 @@ export const AppContextProvider = (props) => {
     try {
       // Check patient
       const userLoggedIn = await getUserData();
-
       if (userLoggedIn) {
         setIsLOggedin(true);
         return;
@@ -121,7 +112,6 @@ export const AppContextProvider = (props) => {
 
       // Check doctor
       const doctorLoggedIn = await getDoctorData();
-
       if (doctorLoggedIn) {
         setIsLOggedin(true);
         return;
@@ -129,7 +119,6 @@ export const AppContextProvider = (props) => {
 
       // Check pharmacy
       const pharmacyLoggedIn = await getPharmacyData();
-
       if (pharmacyLoggedIn) {
         setIsLOggedin(true);
         return;
@@ -137,18 +126,12 @@ export const AppContextProvider = (props) => {
 
       // Nobody authenticated
       setIsLOggedin(false);
-
       setUserData(null);
       setDoctorData(null);
       setPharmacyData(null);
     } catch (error) {
-      console.error(
-        "Session restoration failed:",
-        error
-      );
-
+      console.error("Session restoration failed:", error);
       setIsLOggedin(false);
-
       setUserData(null);
       setDoctorData(null);
       setPharmacyData(null);
@@ -156,73 +139,52 @@ export const AppContextProvider = (props) => {
       setLoading(false);
     }
   };
-
 
   useEffect(() => {
     restoreSession();
   }, []);
 
-
-  const loginSuccess = async () => {
+  const loginSuccess = async (token) => {
+    if (token) localStorage.setItem("token", token);
     setLoading(true);
-
     try {
       const success = await getUserData();
-
-      if (success) {
-        setIsLOggedin(true);
-      }
+      if (success) setIsLOggedin(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const doctorLoginSuccess = async () => {
+  const doctorLoginSuccess = async (token) => {
+    if (token) localStorage.setItem("token", token);
     setLoading(true);
-
     try {
       const success = await getDoctorData();
-
-      if (success) {
-        setIsLOggedin(true);
-      }
+      if (success) setIsLOggedin(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const pharmacyLoginSuccess = async () => {
+  const pharmacyLoginSuccess = async (token) => {
+    if (token) localStorage.setItem("token", token);
     setLoading(true);
-
     try {
       const success = await getPharmacyData();
-
-      if (success) {
-        setIsLOggedin(true);
-      }
+      if (success) setIsLOggedin(true);
     } finally {
       setLoading(false);
     }
   };
-
 
   const logout = async () => {
     try {
-      await axios.post(
-        `${baseUrl}/api/auth/logout`,
-        {},
-        {
-          withCredentials: true,
-        }
-      );
+      await axios.post(`${baseUrl}/api/auth/logout`, {});
     } catch (error) {
-      console.error(
-        "Logout error:",
-        error.response?.data || error.message
-      );
+      console.error("Logout error:", error.response?.data || error.message);
     } finally {
+      localStorage.removeItem("token");
       setIsLOggedin(false);
-
       setUserData(null);
       setDoctorData(null);
       setPharmacyData(null);
@@ -231,19 +193,14 @@ export const AppContextProvider = (props) => {
 
   const pharmacyLogout = async () => {
     try {
-      await axios.post(
-        `${baseUrl}/api/pharmacy/logout`,
-        {},
-        {
-          withCredentials: true,
-        }
-      );
+      await axios.post(`${baseUrl}/api/pharmacy/logout`, {});
     } catch (error) {
       console.error(
         "Pharmacy logout error:",
         error.response?.data || error.message
       );
     } finally {
+      localStorage.removeItem("token");
       setIsLOggedin(false);
       setPharmacyData(null);
     }
@@ -256,24 +213,19 @@ export const AppContextProvider = (props) => {
       );
 
       if (data.success && data.patientCustomId) {
-        setActivePatientCustomId(
-          data.patientCustomId
-        );
+        setActivePatientCustomId(data.patientCustomId);
       } else {
         setActivePatientCustomId(null);
       }
     } catch (error) {
-      console.error(
-        "Error checking active session:",
-        error
-      );
-
+      console.error("Error checking active session:", error);
       setActivePatientCustomId(null);
     }
   }, [baseUrl]);
 
   const value = {
     backendUrl,
+    baseUrl,
 
     isLoggedin,
     setIsLOggedin,

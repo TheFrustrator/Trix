@@ -8,27 +8,32 @@ import { toast } from "react-toastify";
 
 const PatientLogin = () => {
   const navigate = useNavigate();
-  const { backendUrl, setIsLOggedin, getUserData } = useContext(AppContext);
+  const { backendUrl, loginSuccess } = useContext(AppContext);
   const [isSlidebarOpen, setIsSlidebarOpen] = useState(false);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  
   const onSubmitHandler = async (event) => {
+    event.preventDefault();
     try {
-      event.preventDefault();
       axios.defaults.withCredentials = true;
-      const { data } = await axios.post(
-        backendUrl + "/api/auth/patient-login",
-        { email, password },
-      );
+
+      const baseUrl = backendUrl?.endsWith("/")
+        ? backendUrl.slice(0, -1)
+        : backendUrl;
+
+      const { data } = await axios.post(`${baseUrl}/api/auth/patient-login`, {
+        email,
+        password,
+      });
 
       if (data.success) {
-        setIsLOggedin(true);
-        getUserData();
-        navigate("/patient-dashboard");
-        toast.success(`Welcome back ${data.name}`);
+        // Save token & refresh context state
+        await loginSuccess(data.token);
+
+        toast.success(`Welcome back ${data.name || "Patient"}`);
+        navigate("/patient-dashboard", { replace: true });
       } else {
         toast.error(data.message || "Login failed.");
       }
@@ -43,7 +48,7 @@ const PatientLogin = () => {
   };
 
   return (
-    <div className="">
+    <div>
       <UserLoginHeader
         isSlidebarOpen={isSlidebarOpen}
         setIsSlidebarOpen={setIsSlidebarOpen}

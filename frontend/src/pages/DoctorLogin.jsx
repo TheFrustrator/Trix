@@ -1,6 +1,5 @@
 import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Icons, loginRoles } from "../assets/assets";
 import UserLoginHeader from "../cards/UserLoginHeader";
 import LoginCard from "../cards/LoginCard";
 import { AppContext } from "../context/AppContext";
@@ -9,7 +8,7 @@ import { toast } from "react-toastify";
 
 const DoctorLogin = () => {
   const navigate = useNavigate();
-  const { backendUrl, setIsLOggedin, getDoctorData } = useContext(AppContext);
+  const { backendUrl, doctorLoginSuccess } = useContext(AppContext);
   const [isSlidebarOpen, setIsSlidebarOpen] = useState(false);
 
   const [email, setEmail] = useState("");
@@ -30,16 +29,11 @@ const DoctorLogin = () => {
       });
 
       if (data.success) {
-        // 1. Fetch doctor data into AppContext first
-        await getDoctorData();
+        // Save token & refresh doctor context state
+        await doctorLoginSuccess(data.token);
 
-        // 2. Set logged in state
-        setIsLOggedin(true);
-
-        navigate("/doctor-dashboard", { replace: true });
         toast.success(`Welcome back ${data.name || "Doctor"}`);
-
-        // 3. Navigate directly to doctor dashboard with replace
+        navigate("/doctor-dashboard", { replace: true });
       } else {
         toast.error(data.message || "Login failed.");
       }
@@ -54,7 +48,7 @@ const DoctorLogin = () => {
   };
 
   return (
-    <div className="">
+    <div>
       <UserLoginHeader
         isSlidebarOpen={isSlidebarOpen}
         setIsSlidebarOpen={setIsSlidebarOpen}
