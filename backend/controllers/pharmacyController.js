@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import prescriptionPdfModel from "../models/prescriptionPdfModel.js";
 import userModel from "../models/userModel.js";
-import pharmacyModel from "../middleware/pharmacyModel.js";
+import pharmacyModel from '../model/pharmacyModel.js';
 import doctorModel from "../models/doctorModel.js";
 import transporter from "../config/nodemailer.js";
 

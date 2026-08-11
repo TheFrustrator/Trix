@@ -19,6 +19,7 @@ import {
 import pharmacyAuth from "../middleware/pharmacyMiddleware.js";
 import upload from "../controllers/multer.js";
 
+
 const pharmacyRouter = express.Router();
 
 pharmacyRouter.post(
