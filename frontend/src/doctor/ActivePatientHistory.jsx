@@ -48,14 +48,21 @@ const ActivePatientHistory = () => {
   const handleSaveDiagnosis = async (e) => {
     e.preventDefault();
 
+    if (!patientCustomId) {
+      return toast.error("Invalid or missing Patient ID parameter.");
+    }
+
     if (!addNewDiagnosis.trim()) {
-      return toast.error("Please enter diagnosis details");
+      return toast.error("Please enter diagnosis details.");
     }
 
     try {
       setLoading(true);
       axios.defaults.withCredentials = true;
-      const baseUrl = backendUrl?.endsWith("/") ? backendUrl.slice(0, -1) : backendUrl;
+
+      const baseUrl = backendUrl?.endsWith("/")
+        ? backendUrl.slice(0, -1)
+        : backendUrl;
 
       const formData = new FormData();
       formData.append("patientCustomId", patientCustomId);
@@ -66,9 +73,16 @@ const ActivePatientHistory = () => {
         formData.append("report", uploadLicense);
       }
 
-      const { data } = await axios.post(`${baseUrl}/api/doctor/save-diagnosis`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const token = localStorage.getItem("token");
+
+      // Post FormData without manual content-type headers so Axios injects boundary strings
+      const { data } = await axios.post(
+        `${baseUrl}/api/doctor/save-diagnosis`,
+        formData,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
 
       if (data.success) {
         toast.success("Diagnosis saved successfully!");
@@ -76,20 +90,29 @@ const ActivePatientHistory = () => {
         setDiagnosisNotes("");
         setUploadLicense(null);
       } else {
-        toast.error(data.message || "Failed to save diagnosis");
+        toast.error(data.message || "Failed to save diagnosis.");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to save diagnosis."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSaveDiagnosis} className="w-full grid grid-cols-1 lg:grid-cols-2 gap-5 pr-6">
+    <form
+      onSubmit={handleSaveDiagnosis}
+      className="w-full grid grid-cols-1 lg:grid-cols-2 gap-5 pr-6"
+    >
       <div className="w-full flex flex-col py-1">
         <div className="flex flex-row justify-between items-center">
-          <h1 className="text-base font-bold text-slate-800">Add New Diagnosis</h1>
+          <h1 className="text-base font-bold text-slate-800">
+            Add New Diagnosis
+          </h1>
           <PiThermometerHot size={20} className="text-gray-400" />
         </div>
         <div className="w-full h-48 border border-gray-300 rounded-xl shadow-xs hover:border-blue-400 bg-white mt-2">
@@ -104,7 +127,9 @@ const ActivePatientHistory = () => {
 
       <div className="w-full flex flex-col py-1">
         <div className="flex flex-row justify-between items-center">
-          <h1 className="text-base font-bold text-slate-800">Diagnosis Notes</h1>
+          <h1 className="text-base font-bold text-slate-800">
+            Diagnosis Notes
+          </h1>
           <LuNotebookPen size={20} className="text-gray-400" />
         </div>
         <div className="w-full h-48 border border-gray-300 rounded-xl shadow-xs hover:border-blue-400 bg-white mt-2">

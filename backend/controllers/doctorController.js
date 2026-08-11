@@ -491,35 +491,58 @@ export const getDoctorData = async (req, res) => {
 
 export const saveDiagnosis = async (req, res) => {
   try {
-    const docId = req.docId || req.body?.docId;
+    const doctorId = req.doctorId || req.userId; // Extracted from doctorAuth middleware
     const { patientCustomId, diagnosis, notes, date } = req.body;
 
-    if (!docId || !patientCustomId || !diagnosis) {
+    if (!doctorId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Doctor authentication required" });
+    }
+
+    if (!patientCustomId || !diagnosis) {
       return res
         .status(400)
         .json({
           success: false,
-          message: "Missing required diagnosis details",
+          message: "Missing patient ID or diagnosis details",
         });
     }
 
-    const reportPath = req.file ? req.file.path : null;
+    // Handle File Upload safely if report attached
+    let reportUrl = "";
+    if (req.file) {
+      // If using Cloudinary with memory storage buffer:
+      const fileBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+      // const uploadResult = await cloudinary.uploader.upload(fileBase64);
+      // reportUrl = uploadResult.secure_url;
+
+      // Or if saving file path locally:
+      reportUrl = req.file.path || req.file.filename || "";
+    }
 
     const newDiagnosis = new diagnosisModel({
-      doctorId: docId,
+      doctorId,
       patientCustomId,
       diagnosis,
-      notes,
-      reportPath,
+      notes: notes || "",
       date: date || new Date().toISOString().split("T")[0],
+      reportUrl,
     });
 
     await newDiagnosis.save();
 
-    return res.json({ success: true, message: "Diagnosis saved successfully" });
+    return res.status(201).json({
+      success: true,
+      message: "Diagnosis saved successfully!",
+      diagnosisData: newDiagnosis,
+    });
   } catch (error) {
-    console.error("saveDiagnosis error:", error);
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("Error in saveDiagnosis:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to save diagnosis",
+    });
   }
 };
 
@@ -630,7 +653,7 @@ export const recordRecentPatientVisit = async (
   patientId,
   patientCustomId,
   patientName,
-  disease
+  disease,
 ) => {
   try {
     await recentPatientModel.findOneAndUpdate(
@@ -641,7 +664,7 @@ export const recordRecentPatientVisit = async (
         disease: disease || "General Consultation",
         lastVisitDate: new Date(),
       },
-      { upsert: true, returnDocument: "after" }
+      { upsert: true, returnDocument: "after" },
     );
   } catch (error) {
     console.error("Error recording recent patient:", error);
