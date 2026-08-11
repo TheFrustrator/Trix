@@ -2,7 +2,7 @@
 
 **One ID. Your Complete Medical Record.**
 
-MediLink is a consent-driven digital health record platform that connects **Patients**, **Doctors**, and **Pharmacies** around a single unique Patient ID. Patients own and control their medical dat[...]
+MediLink is a consent-driven digital health record platform that connects **Patients**, **Doctors**, and **Pharmacies** around a single unique Patient ID. Patients own and control their medical data at all times — doctors get temporary, permission-based access only during an active consultation, and pharmacies get a strictly read-only view limited to the current valid prescription.
 
 Built for the **AI in Healthcare** track hackathon submission.
 
@@ -32,7 +32,7 @@ Built for the **AI in Healthcare** track hackathon submission.
 
 ## 🏥 Problem Statement
 
-Patient medical history is fragmented across hospitals, clinics, and pharmacies. Patients repeat their history verbally at every visit, carry physical prescriptions, and have no reliable way to tr[...]
+Patient medical history is fragmented across hospitals, clinics, and pharmacies. Patients repeat their history verbally at every visit, carry physical prescriptions, and have no reliable way to track their diagnosis timeline. Pharmacies have no trustworthy way to verify whether a prescription is genuine or current. There is no unified, patient-controlled, consent-based system that lets a patient own their data while granting temporary, revocable access to healthcare providers.
 
 ## 💡 Solution Overview
 
@@ -96,43 +96,14 @@ MediLink solves this with a **consent-first, minimal-access, time-bound permissi
 ### 🧑‍🦱 Patient Flow
 | Screen | File |
 |---|---|
-<<<<<<< HEAD
-| Patient Sign Up | <img width="1376" height="768" alt="01_Paitent_signup_page" src="https://github.com/user-attachments/assets/cbbdadb9-e0e8-44d1-b53c-cac8cd0e749b" />
- |
-| Patient Dashboard (with Doctor Visit History timeline) | <img width="1376" height="768" alt="02_Paitent Dashboard" src="https://github.com/user-attachments/assets/dffa3c63-036a-4e0e-bcba-78db598884d[...]" 
- |
-| Access Requests (Accept/Deny + Active Sessions) | <img width="1376" height="768" alt="03_Request_access_page" src="https://github.com/user-attachments/assets/8a1be9c2-de1e-4aa2-af89-52e422e72100" />
- |
-| Medical History — Visit Detail View | <img width="1376" height="768" alt="04_1_View_detalis" src="https://github.com/user-attachments/assets/91682b75-1361-4874-87f7-d3cbf4f1cbfe" />
-|
-=======
 | Patient Sign Up | `01_Paitent_signup_page.png` |
 | Patient Dashboard (with Doctor Visit History timeline) | `02_Paitent_Dashboard.png` |
 | Access Requests (Accept/Deny + Active Sessions) | `03_Request_access_page.png` |
 | Medical History — Visit Detail View | `04_1_View_detalis.png` |
->>>>>>> 9514d3b (REDME.md vs1.0.0)
 
 ### 🩺 Doctor Flow
 | Screen | File |
 |---|---|
-<<<<<<< HEAD
-| Doctor Sign Up (with license upload) | <img width="1376" height="768" alt="01_Doctor_signup_page" src="https://github.com/user-attachments/assets/4fcb4ae4-9359-4ccc-93f7-a4cbc03d9d3b" />
- |
-| Doctor Dashboard — Patient ID Search | <img width="1375" height="768" alt="02_Dashboard" src="https://github.com/user-attachments/assets/ab23564f-8847-4e5d-a09b-73d87c127b6a" />
- |
-| Waiting for Patient Approval | <img width="1376" height="768" alt="03_acesss_request" src="https://github.com/user-attachments/assets/3a9bae68-3cfb-4c88-90c7-403b610c1761" />
- |
-| Access Granted — Patient Summary | <img width="1376" height="768" alt="04_Access_grant Summary" src="https://github.com/user-attachments/assets/68dd282a-f9b3-4876-95e8-245309d92541" />
- |
-| Add Diagnosis / History Tab | <img width="1376" height="768" alt="05_Diagnosis screen_history" src="https://github.com/user-attachments/assets/d4d69474-8174-4cb7-a05f-1dd66e09b9ff" />
- |
-| Prescription Builder | <img width="1376" height="768" alt="06_prescription_builder" src="https://github.com/user-attachments/assets/0f17ca36-c45f-4744-a765-485544f31999" />
- |
-| Digitally Verified Prescription (PDF view) | <img width="1376" height="768" alt="07_1_After_clicking the view pdf" src="https://github.com/user-attachments/assets/ef1fb761-f4d9-4b1b-811a-9092df57495[...]" />
- |
-| Prescription Submitted Confirmation |<img width="1376" height="768" alt="07_Prescription Submitted confirmation" src="https://github.com/user-attachments/assets/dd99a94a-6590-4c83-be2a-c3b0792bc83e"[...]
- |
-=======
 | Doctor Sign Up (with license upload) | `01_Doctor_signup_page.png` |
 | Doctor Dashboard — Patient ID Search | `02_Dashboard.png` |
 | Waiting for Patient Approval | `03_acesss_request.png` |
@@ -141,29 +112,15 @@ MediLink solves this with a **consent-first, minimal-access, time-bound permissi
 | Prescription Builder | `06_prescription_builder.png` |
 | Digitally Verified Prescription (PDF view) | `07_1_After_clicking_the_view_pdf.png` |
 | Prescription Submitted Confirmation | `07_Prescription_Submitted_confirmation.png` |
->>>>>>> 9514d3b (REDME.md vs1.0.0)
 
 ### 💊 Pharmacy Flow
 | Screen | File |
 |---|---|
-<<<<<<< HEAD
-| Pharmacy Sign Up (with license upload) | <img width="1376" height="768" alt="01_Pharmecy_signup_page" src="https://github.com/user-attachments/assets/ee28a95f-b034-4c64-9ba8-1bec788ec25f" />
- |
-| Manage Pharmacy Account | <img width="1376" height="768" alt="02_1_Interface_of_manage_account" src="https://github.com/user-attachments/assets/cddb30a7-2ff7-4cf6-9ab4-6ac2f05ba97b" />
- |
-| Patient ID Lookup Screen | <img width="1376" height="768" alt="02_Pharmacy_lookup_screen" src="https://github.com/user-attachments/assets/7902bb07-e00b-4bad-b616-7f004eafafd3" />
- |
-| Prescription Result Screen | <img width="1376" height="768" alt="03_Prescription Result screen" src="https://github.com/user-attachments/assets/9af06d99-1b90-453d-b01d-db7102e150cc" />
- |
-| Direct View — Full Prescription | <img width="1408" height="768" alt="04_Prescription view after clicking on Direct view" src="https://github.com/user-attachments/assets/69cf976c-8ef6-4e78-bbb3-58[...]" />
- |
-=======
 | Pharmacy Sign Up (with license upload) | `01_Pharmecy_signup_page.png` |
 | Manage Pharmacy Account | `02_1_Interface_of_manage_account.png` |
 | Patient ID Lookup Screen | `02_Pharmacy_lookup_screen.png` |
 | Prescription Result Screen | `03_Prescription_Result_screen.png` |
 | Direct View — Full Prescription | `04_Prescription_view_after_clicking_on_Direct_view.png` |
->>>>>>> 9514d3b (REDME.md vs1.0.0)
 
 ---
 
@@ -256,7 +213,7 @@ medilink/
 │   │   ├── hooks/
 │   │   ├── context/                # Auth context, Access-token context
 │   │   ├── services/                # API call wrappers (axios)
-│   │   │   └── App.jsx
+│   │   └── App.jsx
 │   └── package.json
 │
 ├── server/                          # Backend (Node/Express)
@@ -270,9 +227,6 @@ medilink/
 │   │   ├── models/
 │   │   │   ├── User.js
 │   │   │   ├── AccessRequest.js
-<<<<<<< HEAD
-,
-=======
 │   │   │   ├── MedicalHistory.js
 │   │   │   ├── Prescription.js
 │   │   │   └── AuditLog.js
@@ -417,4 +371,3 @@ mark it as a feature with a note explaining why.
 
 Developed by: Sudip Bhunia. 
 Testing / Deploying / Security standards: Souvik Das.
->>>>>>> 9514d3b (REDME.md vs1.0.0)
