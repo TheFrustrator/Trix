@@ -29,11 +29,18 @@ const DoctorLogin = () => {
       });
 
       if (data.success) {
-        // Save token & refresh doctor context state
+        // 1. Explicitly save token to localStorage immediately
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+          axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+        }
+
+        // 2. Refresh doctor state in AppContext
         await doctorLoginSuccess(data.token);
 
+        // 3. Show success toast and navigate
+        toast.success(`Welcome back ${data.doctorName || data.name || "Doctor"}`);
         navigate("/doctor-dashboard", { replace: true });
-        toast.success(`Welcome back ${data.name || "Doctor"}`);
       } else {
         toast.error(data.message || "Login failed.");
       }
