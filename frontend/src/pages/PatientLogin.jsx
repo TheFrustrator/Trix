@@ -32,8 +32,8 @@ const PatientLogin = () => {
         // Save token & refresh context state
         await loginSuccess(data.token);
 
-        toast.success(`Welcome back ${data.name || "Patient"}`);
         navigate("/patient-dashboard", { replace: true });
+        toast.success(`Welcome back ${data.name || "Patient"}`);
       } else {
         toast.error(data.message || "Login failed.");
       }

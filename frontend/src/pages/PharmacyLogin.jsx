@@ -32,8 +32,8 @@ const PharmacyLogin = () => {
         // Save token & refresh pharmacy context state
         await pharmacyLoginSuccess(data.token);
 
-        toast.success(`Welcome back ${data.name || "Pharmacy"}`);
         navigate("/pharmacy-dashboard", { replace: true });
+        toast.success(`Welcome back ${data.name || "Pharmacy"}`);
       } else {
         toast.error(data.message || "Login failed.");
       }
