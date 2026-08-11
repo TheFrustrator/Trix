@@ -21,10 +21,10 @@ export const AppContextProvider = (props) => {
     ? backendUrl.slice(0, -1)
     : backendUrl;
 
-  // Configure Axios defaults & Interceptors
+  // Configure Axios defaults
   axios.defaults.withCredentials = true;
 
-  // Add an Axios Request Interceptor to dynamically attach the token on every request
+  // Axios Request Interceptor: Automatically attaches Authorization Bearer token from localStorage
   useEffect(() => {
     const interceptor = axios.interceptors.request.use(
       (config) => {
@@ -40,9 +40,13 @@ export const AppContextProvider = (props) => {
     return () => axios.interceptors.request.eject(interceptor);
   }, []);
 
-  const getUserData = async () => {
+  const getUserData = async (overrideToken) => {
     try {
-      const { data } = await axios.get(`${baseUrl}/api/user/data`);
+      const token = overrideToken || localStorage.getItem("token");
+      const { data } = await axios.get(`${baseUrl}/api/user/data`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
       if (data.success) {
         setUserData(data.userData);
         return true;
@@ -51,17 +55,17 @@ export const AppContextProvider = (props) => {
       return false;
     } catch (error) {
       setUserData(null);
-      console.log(
-        "User session error:",
-        error.response?.data?.message || error.message
-      );
       return false;
     }
   };
 
-  const getDoctorData = async () => {
+  const getDoctorData = async (overrideToken) => {
     try {
-      const { data } = await axios.get(`${baseUrl}/api/doctor/doctor-data`);
+      const token = overrideToken || localStorage.getItem("token");
+      const { data } = await axios.get(`${baseUrl}/api/doctor/doctor-data`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
       if (data.success) {
         setDoctorData(data.userData || data.doctorData);
         return true;
@@ -70,17 +74,17 @@ export const AppContextProvider = (props) => {
       return false;
     } catch (error) {
       setDoctorData(null);
-      console.log(
-        "Doctor session error:",
-        error.response?.data?.message || error.message
-      );
       return false;
     }
   };
 
-  const getPharmacyData = async () => {
+  const getPharmacyData = async (overrideToken) => {
     try {
-      const { data } = await axios.get(`${baseUrl}/api/pharmacy/pharmacy-data`);
+      const token = overrideToken || localStorage.getItem("token");
+      const { data } = await axios.get(`${baseUrl}/api/pharmacy/pharmacy-data`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
       if (data.success) {
         setPharmacyData(
           data.pharmacyData || data.userData || data.data
@@ -91,50 +95,47 @@ export const AppContextProvider = (props) => {
       return false;
     } catch (error) {
       setPharmacyData(null);
-      console.log(
-        "Pharmacy session error:",
-        error.response?.data?.message || error.message
-      );
       return false;
     }
   };
 
   const restoreSession = async () => {
-    setLoading(true);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setLoading(false);
+      setIsLOggedin(false);
+      return;
+    }
 
+    setLoading(true);
     try {
-      // Check patient
-      const userLoggedIn = await getUserData();
+      // Check patient role first
+      const userLoggedIn = await getUserData(token);
       if (userLoggedIn) {
         setIsLOggedin(true);
         return;
       }
 
-      // Check doctor
-      const doctorLoggedIn = await getDoctorData();
+      // Check doctor role next
+      const doctorLoggedIn = await getDoctorData(token);
       if (doctorLoggedIn) {
         setIsLOggedin(true);
         return;
       }
 
-      // Check pharmacy
-      const pharmacyLoggedIn = await getPharmacyData();
+      // Check pharmacy role next
+      const pharmacyLoggedIn = await getPharmacyData(token);
       if (pharmacyLoggedIn) {
         setIsLOggedin(true);
         return;
       }
 
-      // Nobody authenticated
+      // If token is invalid or expired
+      localStorage.removeItem("token");
       setIsLOggedin(false);
-      setUserData(null);
-      setDoctorData(null);
-      setPharmacyData(null);
     } catch (error) {
       console.error("Session restoration failed:", error);
       setIsLOggedin(false);
-      setUserData(null);
-      setDoctorData(null);
-      setPharmacyData(null);
     } finally {
       setLoading(false);
     }
@@ -148,7 +149,7 @@ export const AppContextProvider = (props) => {
     if (token) localStorage.setItem("token", token);
     setLoading(true);
     try {
-      const success = await getUserData();
+      const success = await getUserData(token);
       if (success) setIsLOggedin(true);
     } finally {
       setLoading(false);
@@ -159,7 +160,7 @@ export const AppContextProvider = (props) => {
     if (token) localStorage.setItem("token", token);
     setLoading(true);
     try {
-      const success = await getDoctorData();
+      const success = await getDoctorData(token);
       if (success) setIsLOggedin(true);
     } finally {
       setLoading(false);
@@ -170,7 +171,7 @@ export const AppContextProvider = (props) => {
     if (token) localStorage.setItem("token", token);
     setLoading(true);
     try {
-      const success = await getPharmacyData();
+      const success = await getPharmacyData(token);
       if (success) setIsLOggedin(true);
     } finally {
       setLoading(false);

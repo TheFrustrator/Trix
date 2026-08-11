@@ -133,27 +133,36 @@ export const logout = async (req, res) => {
 // SEND VERIFY OTP
 export const sendVerifyOtp = async (req, res) => {
   try {
+    // req.userId comes directly from userAuth middleware decoding the Bearer token
     const userId = req.userId || req.body?.userId;
 
     if (!userId) {
-      return res.json({ success: false, message: "User ID is required" });
+      return res.status(401).json({
+        success: false,
+        message: "User ID is required or invalid token.",
+      });
     }
 
     const user = await userModel.findById(userId);
 
     if (!user) {
-      return res.json({ success: false, message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
     }
 
     if (user.isVerified) {
-      return res.json({ success: false, message: "Account already verified" });
+      return res.status(400).json({
+        success: false,
+        message: "Account already verified.",
+      });
     }
 
     const otp = String(Math.floor(100000 + Math.random() * 900000));
 
     user.verifyOTP = otp;
     user.verifyOTPExpireAt = Date.now() + 24 * 60 * 60 * 1000;
-
     await user.save();
 
     const mailOption = {
@@ -167,10 +176,13 @@ export const sendVerifyOtp = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Verification OTP sent to email",
+      message: "Verification OTP sent to email.",
     });
   } catch (error) {
-    return res.json({ success: false, message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
