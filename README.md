@@ -19,7 +19,14 @@ Built for the **AI in Healthcare** track hackathon submission.
 - [Tech Stack](#-tech-stack)
 - [System Architecture](#-system-architecture)
 - [Project Structure](#-project-structure)
+- [Database Schema](#-database-schema)
 - [Security Features](#-security-features)
+- [AI Integration](#-ai-integration)
+- [Getting Started](#-getting-started)
+- [Environment Variables](#-environment-variables)
+- [Future Scope](#-future-scope)
+- [Team / Credits](#-team--credits)
+- [License](#-license)
 
 ---
 
@@ -53,6 +60,7 @@ MediLink solves this with a **consent-first, minimal-access, time-bound permissi
 - Prescription library with downloadable PDFs
 - Access Requests inbox — Accept / Deny incoming doctor requests
 - Active Sessions panel with live countdown and one-click **Revoke Access**
+- Settings: profile, password, 2FA, notification preferences, data export/delete
 
 ### Doctor
 - Verified signup with medical license/certificate upload
@@ -81,16 +89,14 @@ MediLink solves this with a **consent-first, minimal-access, time-bound permissi
 ### 🌐 Landing & Authentication
 | Screen | File |
 |---|---|
-| Landing Page | <img width="1376" height="768" alt="01_landing_page" src="https://github.com/user-attachments/assets/94113590-1d11-4506-a041-e5f6d8025684" />
-` |
-| Login / Sign Up Role Selection | <img width="1376" height="768" alt="02_Login_Signup_selection_page" src="https://github.com/user-attachments/assets/cfcdb8a5-ffb7-49e3-a91c-a0049553d224" />
- |
-| Login Page | <img width="1376" height="768" alt="03_Login_page" src="https://github.com/user-attachments/assets/e001f43e-3816-4b0e-89a5-205be4dab0dd" />
- 
+| Landing Page | `01_landing_page.png` |
+| Login / Sign Up Role Selection | `02_Login_Signup_selection_page.png` |
+| Login Page | `03_Login_page.png` |
 
 ### 🧑‍🦱 Patient Flow
 | Screen | File |
 |---|---|
+<<<<<<< HEAD
 | Patient Sign Up | <img width="1376" height="768" alt="01_Paitent_signup_page" src="https://github.com/user-attachments/assets/cbbdadb9-e0e8-44d1-b53c-cac8cd0e749b" />
  |
 | Patient Dashboard (with Doctor Visit History timeline) | <img width="1376" height="768" alt="02_Paitent Dashboard" src="https://github.com/user-attachments/assets/dffa3c63-036a-4e0e-bcba-78db598884d[...]" 
@@ -99,10 +105,17 @@ MediLink solves this with a **consent-first, minimal-access, time-bound permissi
  |
 | Medical History — Visit Detail View | <img width="1376" height="768" alt="04_1_View_detalis" src="https://github.com/user-attachments/assets/91682b75-1361-4874-87f7-d3cbf4f1cbfe" />
 |
+=======
+| Patient Sign Up | `01_Paitent_signup_page.png` |
+| Patient Dashboard (with Doctor Visit History timeline) | `02_Paitent_Dashboard.png` |
+| Access Requests (Accept/Deny + Active Sessions) | `03_Request_access_page.png` |
+| Medical History — Visit Detail View | `04_1_View_detalis.png` |
+>>>>>>> 9514d3b (REDME.md vs1.0.0)
 
 ### 🩺 Doctor Flow
 | Screen | File |
 |---|---|
+<<<<<<< HEAD
 | Doctor Sign Up (with license upload) | <img width="1376" height="768" alt="01_Doctor_signup_page" src="https://github.com/user-attachments/assets/4fcb4ae4-9359-4ccc-93f7-a4cbc03d9d3b" />
  |
 | Doctor Dashboard — Patient ID Search | <img width="1375" height="768" alt="02_Dashboard" src="https://github.com/user-attachments/assets/ab23564f-8847-4e5d-a09b-73d87c127b6a" />
@@ -119,10 +132,21 @@ MediLink solves this with a **consent-first, minimal-access, time-bound permissi
  |
 | Prescription Submitted Confirmation |<img width="1376" height="768" alt="07_Prescription Submitted confirmation" src="https://github.com/user-attachments/assets/dd99a94a-6590-4c83-be2a-c3b0792bc83e"[...]
  |
+=======
+| Doctor Sign Up (with license upload) | `01_Doctor_signup_page.png` |
+| Doctor Dashboard — Patient ID Search | `02_Dashboard.png` |
+| Waiting for Patient Approval | `03_acesss_request.png` |
+| Access Granted — Patient Summary | `04_Access_grant_Summary.png` |
+| Add Diagnosis / History Tab | `05_Diagnosis_screen_history.png` |
+| Prescription Builder | `06_prescription_builder.png` |
+| Digitally Verified Prescription (PDF view) | `07_1_After_clicking_the_view_pdf.png` |
+| Prescription Submitted Confirmation | `07_Prescription_Submitted_confirmation.png` |
+>>>>>>> 9514d3b (REDME.md vs1.0.0)
 
 ### 💊 Pharmacy Flow
 | Screen | File |
 |---|---|
+<<<<<<< HEAD
 | Pharmacy Sign Up (with license upload) | <img width="1376" height="768" alt="01_Pharmecy_signup_page" src="https://github.com/user-attachments/assets/ee28a95f-b034-4c64-9ba8-1bec788ec25f" />
  |
 | Manage Pharmacy Account | <img width="1376" height="768" alt="02_1_Interface_of_manage_account" src="https://github.com/user-attachments/assets/cddb30a7-2ff7-4cf6-9ab4-6ac2f05ba97b" />
@@ -133,6 +157,13 @@ MediLink solves this with a **consent-first, minimal-access, time-bound permissi
  |
 | Direct View — Full Prescription | <img width="1408" height="768" alt="04_Prescription view after clicking on Direct view" src="https://github.com/user-attachments/assets/69cf976c-8ef6-4e78-bbb3-58[...]" />
  |
+=======
+| Pharmacy Sign Up (with license upload) | `01_Pharmecy_signup_page.png` |
+| Manage Pharmacy Account | `02_1_Interface_of_manage_account.png` |
+| Patient ID Lookup Screen | `02_Pharmacy_lookup_screen.png` |
+| Prescription Result Screen | `03_Prescription_Result_screen.png` |
+| Direct View — Full Prescription | `04_Prescription_view_after_clicking_on_Direct_view.png` |
+>>>>>>> 9514d3b (REDME.md vs1.0.0)
 
 ---
 
@@ -162,6 +193,8 @@ MediLink solves this with a **consent-first, minimal-access, time-bound permissi
 | Real-time Notifications | Socket.io / Firebase Cloud Messaging |
 | AI Layer | OpenAI / Claude / Gemini API |
 | Hosting | Vercel (frontend) + Render/Railway (backend) + Supabase/Neon (DB) |
+
+> **Hackathon shortcut:** Supabase (Postgres + Auth + Storage + Row Level Security) or Firebase can replace a large chunk of custom backend work and is a great fit for the consent-based access model.
 
 ---
 
@@ -237,4 +270,151 @@ medilink/
 │   │   ├── models/
 │   │   │   ├── User.js
 │   │   │   ├── AccessRequest.js
+<<<<<<< HEAD
 ,
+=======
+│   │   │   ├── MedicalHistory.js
+│   │   │   ├── Prescription.js
+│   │   │   └── AuditLog.js
+│   │   ├── routes/
+│   │   ├── middleware/
+│   │   │   ├── auth.js              # JWT verification
+│   │   │   ├── rbac.js              # Role-based access control
+│   │   │   └── rateLimiter.js
+│   │   ├── services/
+│   │   │   ├── pdfGenerator.js
+│   │   │   ├── notificationService.js
+│   │   │   └── aiService.js         # LLM API integration
+│   │   ├── utils/
+│   │   └── app.js
+│   ├── prisma/ (or migrations/)     # DB schema & migrations
+│   └── package.json
+│
+├── screenshots/                     # All UI mockups (referenced in this README)
+├── docs/
+│   └── PROJECT_SYNOPSIS.md          # Full hackathon synopsis document
+├── .env.example
+├── README.md
+└── LICENSE
+```
+
+---
+
+## 🗄️ Database Schema (Simplified)
+
+**users** — `id`, `name`, `role` (patient/doctor/pharmacy), `email`, `password_hash`, `unique_patient_id` (nullable)
+
+**access_requests** — `id`, `doctor_id`, `patient_id`, `status` (pending/accepted/denied/revoked), `requested_at`, `expires_at`
+
+**medical_history** — `id`, `patient_id`, `doctor_id`, `visit_date`, `symptoms`, `diagnosis_notes`, `attachments[]`
+
+**prescriptions** — `id`, `patient_id`, `doctor_id`, `visit_id`, `medicines` (JSON), `pdf_url`, `created_at`, `valid_until`
+
+**audit_logs** — `id`, `actor_id`, `action`, `target_patient_id`, `timestamp`
+
+---
+
+## 🔐 Security Features
+
+Health data demands strong security by default — this is a core focus of MediLink, not an afterthought:
+
+1. **Role-Based Access Control (RBAC)** enforced at the API layer, not just hidden in the UI.
+2. **Consent-based, time-bound access tokens** — a doctor's write access is a short-lived JWT tied to an `access_requests` record, validated on every request.
+3. **Encryption** — HTTPS/TLS in transit; encrypted sensitive fields at rest.
+4. **Least privilege for pharmacy** — a dedicated, narrow API endpoint returns only the active prescription object, never the full patient record.
+5. **Full audit logging** — every view/edit is logged with actor ID, timestamp, and action, visible to the patient for transparency.
+6. **Password security** via bcrypt/argon2 hashing.
+7. **Input validation & sanitization** to prevent SQL injection/XSS.
+8. **Rate limiting** on login and Patient-ID lookup endpoints to prevent brute-force/ID enumeration.
+9. **Instant session invalidation** — tokens are blacklisted server-side the moment access is revoked.
+10. **Digitally signed, tamper-verified prescriptions** — QR-coded and hash-verifiable, so pharmacies can confirm authenticity.
+
+---
+
+## 🤖 AI Integration
+
+- **AI Symptom-to-Diagnosis Assistant** — suggests possible differential diagnoses from entered symptoms; doctor retains final authority.
+- **AI Prescription Safety Check** — flags potential drug interactions or dosage anomalies before submission.
+- **AI Patient Summary Generator** — condenses long medical history into a short dashboard-ready gist.
+- **AI Patient Chatbot** *(optional)* — answers general health questions with a clear "not a diagnosis" disclaimer.
+
+---
+
+## 🚀 Getting Started
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/<your-username>/medilink.git
+cd medilink
+
+# 2. Install dependencies
+cd client && npm install
+cd ../server && npm install
+
+# 3. Set up environment variables
+cp .env.example .env
+# fill in DB connection string, JWT secret, storage keys, AI API key
+
+# 4. Run database migrations
+npx prisma migrate dev   # or your chosen ORM's equivalent
+
+# 5. Start the backend
+cd server && npm run dev
+
+# 6. Start the frontend
+cd client && npm run dev
+```
+
+The app should now be running at `http://localhost:3000` (frontend) and `http://localhost:5000` (backend API).
+
+---
+
+## 🔑 Environment Variables
+
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/medilink
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRY=2h
+STORAGE_BUCKET_URL=your_firebase_or_s3_url
+STORAGE_ACCESS_KEY=your_key
+AI_API_KEY=your_openai_or_claude_or_gemini_key
+```
+
+---
+
+## 🔭 Future Scope
+
+- QR-code based instant ID sharing at hospital reception desks
+- Wearable device integration for live vitals on the patient dashboard
+- Insurance claim auto-generation from verified prescriptions
+- Multi-language support for prescriptions and patient communication
+- Blockchain-based immutable audit trail
+
+---
+
+## 👨‍💻 Team / Credits
+
+| Name | Role |
+|---|---|
+| *Your Name* | Full-stack Development, Security |
+| *Teammate* | UI/UX Design |
+| *Teammate* | AI Integration |
+
+Built for the **AI in Healthcare** hackathon track.
+
+---
+
+## 📄 License
+
+This project is submitted for hackathon evaluation purposes. License to be decided by the team (MIT recommended for open-sourcing after the event).
+
+
+After 12 days of development the project is ready for testing. 
+Approximate contribution split: Sudip Bhunia (~80%), AI-assisted (~15%), others (~5%).
+Testing, deployment, and security standards by Souvik Das.
+Please report bugs by opening issues; if something appears intentional, 
+mark it as a feature with a note explaining why.
+
+Developed by: Sudip Bhunia. 
+Testing / Deploying / Security standards: Souvik Das.
+>>>>>>> 9514d3b (REDME.md vs1.0.0)
