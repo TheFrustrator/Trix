@@ -4,7 +4,7 @@ import { Icons, navigationLinks, userNames, userRoles } from "../assets/assets";
 import UserBasedLoginCard from "../cards/userBasedLoginCard";
 
 const ChooseSighUp = () => {
-  const navigate = useNavigate();
+
   const [authMode, setAuthMode] = useState("login");
   return (
     <div className="min-h-screen bg-[#F3F6FA] flex flex-col items-center  px-4 py-12 relative overflow-hidden">
