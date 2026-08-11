@@ -5,112 +5,61 @@ import { recordRecentPatientVisit } from "./doctorController.js";
 // Fetch active/pending requests for the patient
 export const getPatientAccessRequests = async (req, res) => {
   try {
-    const patientId = req.userId || req.body?.userId;
+    const userId = req.userId || req.body?.userId;
 
-    if (!patientId || typeof patientId !== "string") {
-      return res
-        .status(401)
-        .json({ success: false, message: "Unauthorized patient account" });
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const now = new Date();
-
-    // Automatically mark expired granted sessions in DB
-    await accessRequestModel.updateMany(
-      {
-        patientId,
-        status: "granted",
-        expiresAt: { $lte: now },
-      },
-      { $set: { status: "expired" } }
-    );
-
-    // Strictly fetch ONLY pending requests and valid active granted sessions
+    // Find requests matching this patient's ObjectId or patientId
     const requests = await accessRequestModel
-      .find({
-        patientId,
-        $or: [
-          { status: "pending" },
-          { status: "granted", expiresAt: { $gt: now } },
-        ],
-      })
-      .populate("doctorId", "name clinicAdd Specialization email")
+      .find({ patientId: userId })
+      .populate("doctorId", "name clinicAdd Specialization")
       .sort({ createdAt: -1 });
 
-    return res.json({
-      success: true,
-      requests,
-    });
+    return res.json({ success: true, requests });
   } catch (error) {
+    console.error("getPatientAccessRequests error:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Accept, Deny, or Revoke an Access Request
-export const updateRequestStatus = async (req, res) => {
+// POST /api/patient/update-request-status
+export const updateAccessRequestStatus = async (req, res) => {
   try {
-    const patientId = req.userId || req.body?.userId;
-    const { requestId, action } = req.body;
+    const userId = req.userId || req.body?.userId;
+    const { requestId, action } = req.body; // action: 'accept', 'deny', or 'revoke'
 
-    if (
-      !requestId ||
-      typeof requestId !== "string" ||
-      !action ||
-      typeof action !== "string"
-    ) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid parameters" });
+    if (!userId || !requestId || !action) {
+      return res.status(400).json({ success: false, message: "Missing required details" });
     }
 
-    const allowedActions = ["accept", "deny", "revoke"];
-    if (!allowedActions.includes(action)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Action type not permitted" });
-    }
-
-    const request = await accessRequestModel.findOne({
-      _id: requestId,
-      patientId,
-    });
-
+    const request = await accessRequestModel.findById(requestId);
     if (!request) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Access request not found" });
+      return res.status(404).json({ success: false, message: "Access request not found" });
     }
 
     if (action === "accept") {
-      const now = new Date();
-      const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours duration
-
       request.status = "granted";
-      request.grantedAt = now;
-      request.expiresAt = twoHoursLater;
-
-      // Auto-record this patient in the doctor's recent list
-      const patientUser = await userModel.findById(patientId).select("name");
-      await recordRecentPatientVisit(
-        request.doctorId,
-        patientId,
-        request.patientCustomId,
-        patientUser?.name || "Patient",
-        "Active Session"
-      );
+      // Grant access for 2 hours (120 minutes)
+      request.expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
     } else if (action === "deny") {
-      request.status = "rejected";
+      request.status = "denied";
     } else if (action === "revoke") {
       request.status = "revoked";
+      request.expiresAt = new Date();
+    } else {
+      return res.status(400).json({ success: false, message: "Invalid action type" });
     }
 
     await request.save();
 
     return res.json({
       success: true,
-      message: `Request ${request.status} successfully`,
+      message: `Access request ${action}ed successfully`,
     });
   } catch (error) {
+    console.error("updateAccessRequestStatus error:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };

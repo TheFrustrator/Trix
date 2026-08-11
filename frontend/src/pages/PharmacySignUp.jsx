@@ -21,15 +21,29 @@ const PharmacySignUp = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [shopAdd, setShopAdd] = useState("");
 
-  const [uploadLicense, setUploadLicense] = useState(null); // Stores raw File object
+  const [uploadLicense, setUploadLicense] = useState("");
   const [licenseFileName, setLicenseFileName] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  const processSelectedFile = (file) => {
+  const convertFileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const processSelectedFile = async (file) => {
     if (!file) return;
-    setUploadLicense(file);
-    setLicenseFileName(file.name);
+    try {
+      const base64String = await convertFileToBase64(file);
+      setUploadLicense(base64String);
+      setLicenseFileName(file.name);
+    } catch (error) {
+      toast.error("Failed to read file. Please try again.");
+    }
   };
 
   const handleDragOver = (e) => {
@@ -41,17 +55,17 @@ const PharmacySignUp = () => {
     setIsDragging(false);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processSelectedFile(e.dataTransfer.files[0]);
+      await processSelectedFile(e.dataTransfer.files[0]);
     }
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     if (e.target.files && e.target.files[0]) {
-      processSelectedFile(e.target.files[0]);
+      await processSelectedFile(e.target.files[0]);
     }
   };
 
@@ -74,24 +88,17 @@ const PharmacySignUp = () => {
         ? backendUrl.slice(0, -1)
         : backendUrl;
 
-      // Prepare Multipart Form Data for Multer
-      const formData = new FormData();
-      formData.append("shopName", shopName);
-      formData.append("ownerName", ownerName);
-      formData.append("email", email);
-      formData.append("password", password);
-      formData.append("phoneNumber", phoneNumber);
-      formData.append("shopAdd", shopAdd);
-      formData.append("uploadLicense", uploadLicense);
-
       // Step 1: Register pharmacy
       const { data: regData } = await axios.post(
         `${baseUrl}/api/pharmacy/pharmacy-signup`,
-        formData,
         {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          shopName,
+          ownerName,
+          email,
+          password,
+          phoneNumber,
+          shopAdd,
+          uploadLicense,
         }
       );
 
