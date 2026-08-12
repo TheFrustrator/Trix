@@ -22,7 +22,6 @@ const DoctorSignUp = () => {
 
   const [loading, setLoading] = useState(false);
 
-  // Store raw File object for FormData compatibility
   const [uploadLicense, setUploadLicense] = useState(null);
   const [licenseFileName, setLicenseFileName] = useState("");
 
@@ -73,11 +72,11 @@ const DoctorSignUp = () => {
       setLoading(true);
       axios.defaults.withCredentials = true;
 
-      const baseUrl = backendUrl?.endsWith("/")
-        ? backendUrl.slice(0, -1)
-        : backendUrl;
+      // Ensure clean base URL without trailing slash
+      const rawUrl = backendUrl || "http://localhost:5000";
+      const baseUrl = rawUrl.endsWith("/") ? rawUrl.slice(0, -1) : rawUrl;
 
-      // Construct FormData payload for Multer
+      // Construct FormData payload
       const formData = new FormData();
       formData.append("name", name);
       formData.append("email", email);
@@ -87,7 +86,7 @@ const DoctorSignUp = () => {
       formData.append("Specialization", Specialization);
       formData.append("uploadLicense", uploadLicense);
 
-      // Step 1: Register doctor
+      // Endpoint: /api/doctor/doctor-signup
       const { data: regData } = await axios.post(
         `${baseUrl}/api/doctor/doctor-signup`,
         formData
@@ -98,7 +97,6 @@ const DoctorSignUp = () => {
         return toast.error(regData.message || "Registration failed");
       }
 
-      // Step 2: Store token locally
       const token = regData.token;
       if (token) {
         localStorage.setItem("token", token);
@@ -107,7 +105,7 @@ const DoctorSignUp = () => {
 
       await doctorLoginSuccess(token);
 
-      // Step 3: Request verification OTP with explicit headers
+      // Request verification OTP
       const { data: otpData } = await axios.post(
         `${baseUrl}/api/doctor/send-verify-otp`,
         {},
