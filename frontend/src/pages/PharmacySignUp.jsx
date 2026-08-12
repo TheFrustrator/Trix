@@ -21,29 +21,16 @@ const PharmacySignUp = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [shopAdd, setShopAdd] = useState("");
 
-  const [uploadLicense, setUploadLicense] = useState("");
+  // Store raw File object for FormData compatibility
+  const [uploadLicense, setUploadLicense] = useState(null);
   const [licenseFileName, setLicenseFileName] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  const convertFileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
-  const processSelectedFile = async (file) => {
+  const processSelectedFile = (file) => {
     if (!file) return;
-    try {
-      const base64String = await convertFileToBase64(file);
-      setUploadLicense(base64String);
-      setLicenseFileName(file.name);
-    } catch (error) {
-      toast.error("Failed to read file. Please try again.");
-    }
+    setUploadLicense(file);
+    setLicenseFileName(file.name);
   };
 
   const handleDragOver = (e) => {
@@ -55,17 +42,17 @@ const PharmacySignUp = () => {
     setIsDragging(false);
   };
 
-  const handleDrop = async (e) => {
+  const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      await processSelectedFile(e.dataTransfer.files[0]);
+      processSelectedFile(e.dataTransfer.files[0]);
     }
   };
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      await processSelectedFile(e.target.files[0]);
+      processSelectedFile(e.target.files[0]);
     }
   };
 
@@ -88,18 +75,20 @@ const PharmacySignUp = () => {
         ? backendUrl.slice(0, -1)
         : backendUrl;
 
+      // Construct FormData for Multer middleware compatibility
+      const formData = new FormData();
+      formData.append("shopName", shopName);
+      formData.append("ownerName", ownerName);
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("phoneNumber", phoneNumber);
+      formData.append("shopAdd", shopAdd);
+      formData.append("uploadLicense", uploadLicense);
+
       // Step 1: Register pharmacy
       const { data: regData } = await axios.post(
         `${baseUrl}/api/pharmacy/pharmacy-signup`,
-        {
-          shopName,
-          ownerName,
-          email,
-          password,
-          phoneNumber,
-          shopAdd,
-          uploadLicense,
-        }
+        formData
       );
 
       if (!regData.success) {
@@ -107,10 +96,16 @@ const PharmacySignUp = () => {
         return toast.error(regData.message || "Registration failed");
       }
 
-      // Step 2: Store token locally & refresh pharmacy session
+      // Step 2: Store token in localStorage immediately
+      if (regData.token) {
+        localStorage.setItem("token", regData.token);
+        axios.defaults.headers.common["Authorization"] = `Bearer ${regData.token}`;
+      }
+      
+      // Sync state in Context
       await pharmacyLoginSuccess(regData.token);
 
-      // Step 3: Request verification OTP
+      // Step 3: Request verification OTP (token is automatically attached in headers)
       const { data: otpData } = await axios.post(
         `${baseUrl}/api/pharmacy/send-verify-otp`
       );

@@ -28,7 +28,7 @@ const LoginCard = ({email,password,setEmail,setPassword, onSubmitHandler}) => {
             value={password}
             className="border border-blue-100 w-full rounded-lg p-2 mt-1"
           />
-          <span onClick={() => navigate('/reset-password')} className="text-black hover:underline cursor-pointer text-xs">Forget Password</span>
+          <span onClick={() => navigate('reset-password')} className="text-black hover:underline cursor-pointer text-xs">Forget Password</span>
         </div>
         <button className="bg-border text-white w-full py-2 rounded-md text-base">
           Login
