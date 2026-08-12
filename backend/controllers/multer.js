@@ -1,25 +1,24 @@
 import multer from "multer";
-import path from "path";
 
-// Define storage configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Upload destination folder
-  },
-  filename: (req, file, cb) => {
-    // Generate unique filename: timestamp + original extension
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
-});
+// Use memoryStorage so files are stored as Buffers in memory without creating local files
+const storage = multer.memoryStorage();
 
-// File filter (restrict to images and PDFs)
+// File filter (restrict to JPEG, PNG, JPG images and PDFs)
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/jpg",
+    "application/pdf",
+  ];
+
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Invalid file type. Only JPEG, PNG, and PDF are allowed."), false);
+    cb(
+      new Error("Invalid file type. Only JPEG, PNG, and PDF are allowed."),
+      false
+    );
   }
 };
 
