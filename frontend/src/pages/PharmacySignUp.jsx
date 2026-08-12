@@ -21,7 +21,6 @@ const PharmacySignUp = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [shopAdd, setShopAdd] = useState("");
 
-  // Store raw File object for FormData compatibility
   const [uploadLicense, setUploadLicense] = useState(null);
   const [licenseFileName, setLicenseFileName] = useState("");
   const [isDragging, setIsDragging] = useState(false);
@@ -75,7 +74,7 @@ const PharmacySignUp = () => {
         ? backendUrl.slice(0, -1)
         : backendUrl;
 
-      // Construct FormData for Multer middleware compatibility
+      // Construct FormData
       const formData = new FormData();
       formData.append("shopName", shopName);
       formData.append("ownerName", ownerName);
@@ -96,18 +95,24 @@ const PharmacySignUp = () => {
         return toast.error(regData.message || "Registration failed");
       }
 
-      // Step 2: Store token in localStorage immediately
-      if (regData.token) {
-        localStorage.setItem("token", regData.token);
-        axios.defaults.headers.common["Authorization"] = `Bearer ${regData.token}`;
+      // Step 2: Store token in localStorage and set axios global header
+      const authToken = regData.token;
+      if (authToken) {
+        localStorage.setItem("token", authToken);
+        axios.defaults.headers.common["Authorization"] = `Bearer ${authToken}`;
       }
-      
-      // Sync state in Context
-      await pharmacyLoginSuccess(regData.token);
 
-      // Step 3: Request verification OTP (token is automatically attached in headers)
+      await pharmacyLoginSuccess(authToken);
+
+      // Step 3: Request verification OTP with EXPLICIT Authorization header
       const { data: otpData } = await axios.post(
-        `${baseUrl}/api/pharmacy/send-verify-otp`
+        `${baseUrl}/api/pharmacy/send-verify-otp`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
       );
 
       if (otpData.success) {
