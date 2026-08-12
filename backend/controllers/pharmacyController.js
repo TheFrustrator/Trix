@@ -7,6 +7,19 @@ import pharmacyModel from "../models/pharmacyModel.js";
 import doctorModel from "../models/doctorModel.js";
 import transporter from "../config/nodemailer.js";
 
+// Helper function to query both Mongo _id and custom pharmacyId safely
+const findPharmacyById = async (id) => {
+  if (!id) return null;
+
+  const conditions = [{ pharmacyId: id }];
+
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    conditions.push({ _id: id });
+  }
+
+  return await pharmacyModel.findOne({ $or: conditions });
+};
+
 // PHARMACY SIGNIN / REGISTER
 export const pharmacyRegister = async (req, res) => {
   const { shopName, ownerName, email, password, phoneNumber, shopAdd } =
@@ -46,9 +59,7 @@ export const pharmacyRegister = async (req, res) => {
       .toUpperCase();
 
     const safePhone = (phoneNumber || "0000").slice(-4);
-
     const randomDigits = Math.floor(1000 + Math.random() * 9000).toString();
-
     const generatedPharmacyID = `${safeName}${safePhone}${randomDigits}PHM`;
 
     const pharmacy = new pharmacyModel({
@@ -177,7 +188,6 @@ export const pharmacyLogout = async (req, res) => {
 };
 
 // SEND OTP TO REGISTERED EMAIL
-// SEND OTP TO REGISTERED EMAIL
 export const sendVerifyOtp = async (req, res) => {
   try {
     const pharmacyId = req.pharmacyId || req.userId || req.body?.pharmacyId;
@@ -189,10 +199,7 @@ export const sendVerifyOtp = async (req, res) => {
       });
     }
 
-    // Query both _id (Mongo ObjectId) and custom pharmacyId string
-    const pharmacy = await pharmacyModel.findOne({
-      $or: [{ _id: mongoose.Types.ObjectId.isValid(pharmacyId) ? pharmacyId : null }, { pharmacyId }],
-    });
+    const pharmacy = await findPharmacyById(pharmacyId);
 
     if (!pharmacy) {
       return res.status(404).json({
@@ -248,9 +255,7 @@ export const verifyEmail = async (req, res) => {
   }
 
   try {
-    const pharmacy = await pharmacyModel.findOne({
-      $or: [{ _id: mongoose.Types.ObjectId.isValid(pharmacyId) ? pharmacyId : null }, { pharmacyId }],
-    });
+    const pharmacy = await findPharmacyById(pharmacyId);
 
     if (!pharmacy) {
       return res.status(404).json({
@@ -300,9 +305,7 @@ export const getPharmacyData = async (req, res) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const pharmacy = await pharmacyModel.findOne({
-      $or: [{ _id: mongoose.Types.ObjectId.isValid(pharmacyId) ? pharmacyId : null }, { pharmacyId }],
-    });
+    const pharmacy = await findPharmacyById(pharmacyId);
 
     if (!pharmacy) {
       return res.status(404).json({
@@ -447,40 +450,6 @@ export const resetPassword = async (req, res) => {
     });
   }
 };
-
-// FETCH PHARMACY DATA FOR APPCONTEXT
-// export const getPharmacyData = async (req, res) => {
-//   try {
-//     const pharmacyId = req.pharmacyId || req.body?.pharmacyId;
-
-//     const pharmacy = await pharmacyModel.findById(pharmacyId);
-
-//     if (!pharmacy) {
-//       return res.json({
-//         success: false,
-//         message: "User not found",
-//       });
-//     }
-
-//     return res.json({
-//       success: true,
-//       userData: {
-//         shopName: pharmacy.shopName,
-//         ownerName: pharmacy.ownerName,
-//         isVerified: pharmacy.isVerified,
-//         pharmacyId: pharmacy.pharmacyId,
-//         phoneNumber: pharmacy.phoneNumber,
-//         email: pharmacy.email,
-//         shopAdd: pharmacy.shopAdd,
-//       },
-//     });
-//   } catch (error) {
-//     return res.json({
-//       success: false,
-//       message: error.message,
-//     });
-//   }
-// };
 
 // GET PRESCRIPTION FOR DISPENSING
 export const getPrescriptionForDispense = async (req, res) => {
@@ -757,7 +726,7 @@ export const getPharmacyDispenseHistory = async (req, res) => {
       doctorName: rx.doctorId?.name || "Doctor",
       dispensedAt: rx.dispensedAt,
       medications: (rx.medicines || []).map(
-        (medicine) => medicine.medicineName,
+        (medicine) => medicine.medicineName
       ),
     }));
 
