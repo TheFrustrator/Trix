@@ -177,28 +177,32 @@ export const pharmacyLogout = async (req, res) => {
 };
 
 // SEND OTP TO REGISTERED EMAIL
+// SEND OTP TO REGISTERED EMAIL
 export const sendVerifyOtp = async (req, res) => {
   try {
-    const pharmacyId = req.pharmacyId || req.body?.pharmacyId;
+    const pharmacyId = req.pharmacyId || req.userId || req.body?.pharmacyId;
 
     if (!pharmacyId) {
-      return res.json({
+      return res.status(401).json({
         success: false,
-        message: "User ID is required",
+        message: "Pharmacy ID is required",
       });
     }
 
-    const pharmacy = await pharmacyModel.findById(pharmacyId);
+    // Query both _id (Mongo ObjectId) and custom pharmacyId string
+    const pharmacy = await pharmacyModel.findOne({
+      $or: [{ _id: mongoose.Types.ObjectId.isValid(pharmacyId) ? pharmacyId : null }, { pharmacyId }],
+    });
 
     if (!pharmacy) {
-      return res.json({
+      return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: "Pharmacy account not found",
       });
     }
 
     if (pharmacy.isVerified) {
-      return res.json({
+      return res.status(400).json({
         success: false,
         message: "Account already verified",
       });
@@ -215,7 +219,7 @@ export const sendVerifyOtp = async (req, res) => {
       from: process.env.SENDER_EMAIL,
       to: pharmacy.email,
       subject: "Account Verification OTP",
-      text: `Your OTP is ${otp}. Verify your account using this. Never share your OTP with anyone.`,
+      text: `Your OTP is ${otp}. Verify your account using this code. Never share your OTP with anyone.`,
     });
 
     return res.json({
@@ -223,7 +227,8 @@ export const sendVerifyOtp = async (req, res) => {
       message: "Verification OTP sent to email",
     });
   } catch (error) {
-    return res.json({
+    console.error("sendVerifyOtp error:", error);
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
@@ -232,35 +237,37 @@ export const sendVerifyOtp = async (req, res) => {
 
 // VERIFY EMAIL VIA OTP
 export const verifyEmail = async (req, res) => {
-  const pharmacyId = req.pharmacyId || req.body?.pharmacyId;
+  const pharmacyId = req.pharmacyId || req.userId || req.body?.pharmacyId;
   const { otp } = req.body;
 
   if (!pharmacyId || !otp) {
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "Missing Details",
     });
   }
 
   try {
-    const pharmacy = await pharmacyModel.findById(pharmacyId);
+    const pharmacy = await pharmacyModel.findOne({
+      $or: [{ _id: mongoose.Types.ObjectId.isValid(pharmacyId) ? pharmacyId : null }, { pharmacyId }],
+    });
 
     if (!pharmacy) {
-      return res.json({
+      return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: "Pharmacy account not found",
       });
     }
 
-    if (pharmacy.verifyOTP === "" || pharmacy.verifyOTP !== otp) {
-      return res.json({
+    if (!pharmacy.verifyOTP || pharmacy.verifyOTP !== otp) {
+      return res.status(400).json({
         success: false,
         message: "Invalid OTP",
       });
     }
 
     if (pharmacy.verifyOTPExpireAt < Date.now()) {
-      return res.json({
+      return res.status(400).json({
         success: false,
         message: "OTP expired",
       });
@@ -277,7 +284,47 @@ export const verifyEmail = async (req, res) => {
       message: "Email verified successfully",
     });
   } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// FETCH PHARMACY DATA FOR APPCONTEXT
+export const getPharmacyData = async (req, res) => {
+  try {
+    const pharmacyId = req.pharmacyId || req.userId || req.body?.pharmacyId;
+
+    if (!pharmacyId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const pharmacy = await pharmacyModel.findOne({
+      $or: [{ _id: mongoose.Types.ObjectId.isValid(pharmacyId) ? pharmacyId : null }, { pharmacyId }],
+    });
+
+    if (!pharmacy) {
+      return res.status(404).json({
+        success: false,
+        message: "Pharmacy account not found",
+      });
+    }
+
     return res.json({
+      success: true,
+      userData: {
+        shopName: pharmacy.shopName,
+        ownerName: pharmacy.ownerName,
+        isVerified: pharmacy.isVerified,
+        pharmacyId: pharmacy.pharmacyId,
+        phoneNumber: pharmacy.phoneNumber,
+        email: pharmacy.email,
+        shopAdd: pharmacy.shopAdd,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
@@ -402,38 +449,38 @@ export const resetPassword = async (req, res) => {
 };
 
 // FETCH PHARMACY DATA FOR APPCONTEXT
-export const getPharmacyData = async (req, res) => {
-  try {
-    const pharmacyId = req.pharmacyId || req.body?.pharmacyId;
+// export const getPharmacyData = async (req, res) => {
+//   try {
+//     const pharmacyId = req.pharmacyId || req.body?.pharmacyId;
 
-    const pharmacy = await pharmacyModel.findById(pharmacyId);
+//     const pharmacy = await pharmacyModel.findById(pharmacyId);
 
-    if (!pharmacy) {
-      return res.json({
-        success: false,
-        message: "User not found",
-      });
-    }
+//     if (!pharmacy) {
+//       return res.json({
+//         success: false,
+//         message: "User not found",
+//       });
+//     }
 
-    return res.json({
-      success: true,
-      userData: {
-        shopName: pharmacy.shopName,
-        ownerName: pharmacy.ownerName,
-        isVerified: pharmacy.isVerified,
-        pharmacyId: pharmacy.pharmacyId,
-        phoneNumber: pharmacy.phoneNumber,
-        email: pharmacy.email,
-        shopAdd: pharmacy.shopAdd,
-      },
-    });
-  } catch (error) {
-    return res.json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+//     return res.json({
+//       success: true,
+//       userData: {
+//         shopName: pharmacy.shopName,
+//         ownerName: pharmacy.ownerName,
+//         isVerified: pharmacy.isVerified,
+//         pharmacyId: pharmacy.pharmacyId,
+//         phoneNumber: pharmacy.phoneNumber,
+//         email: pharmacy.email,
+//         shopAdd: pharmacy.shopAdd,
+//       },
+//     });
+//   } catch (error) {
+//     return res.json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
 
 // GET PRESCRIPTION FOR DISPENSING
 export const getPrescriptionForDispense = async (req, res) => {
