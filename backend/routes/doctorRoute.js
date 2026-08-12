@@ -35,7 +35,9 @@ doctorRouter.post(
 );
 doctorRouter.post("/doctor-login", doctorlogin);
 doctorRouter.post("/logout", doctorlogout);
-doctorRouter.post("/doc", doctorAuth, sendVerifyOtp);
+
+// FIXED: Changed "/doc" back to "/send-verify-otp"
+doctorRouter.post("/send-verify-otp", doctorAuth, sendVerifyOtp);
 doctorRouter.post("/verify-account", doctorAuth, verifyEmail);
 doctorRouter.get("/is-auth", doctorAuth, isAuthenticated);
 doctorRouter.post("/send-reset-otp", sendResetOtp);
@@ -44,18 +46,47 @@ doctorRouter.post("/reset-password", resetPassword);
 // Doctor Access Requests & Medical Records
 doctorRouter.post("/request-access", doctorAuth, createAccessRequest);
 doctorRouter.post("/cancel-access-request", doctorAuth, cancelAccessRequest);
-doctorRouter.get("/check-request-status/:requestId", doctorAuth, checkAccessRequestStatus);
-doctorRouter.get("/active-session/:patientCustomId", doctorAuth, getActiveSessionDetails);
-doctorRouter.get("/patient-summary/:patientCustomId", doctorAuth, getActivePatientSummary);
+doctorRouter.get(
+  "/check-request-status/:requestId",
+  doctorAuth,
+  checkAccessRequestStatus
+);
+doctorRouter.get(
+  "/active-session/:patientCustomId",
+  doctorAuth,
+  getActiveSessionDetails
+);
+doctorRouter.get(
+  "/patient-summary/:patientCustomId",
+  doctorAuth,
+  getActivePatientSummary
+);
 doctorRouter.get("/recent-patients", doctorAuth, getRecentPatients);
-doctorRouter.get("/current-active-session", doctorAuth, getCurrentActiveSession);
+doctorRouter.get(
+  "/current-active-session",
+  doctorAuth,
+  getCurrentActiveSession
+);
 
-doctorRouter.post("/save-diagnosis", doctorAuth, upload.single("report"), saveDiagnosis);
+doctorRouter.post(
+  "/save-diagnosis",
+  doctorAuth,
+  upload.single("report"),
+  saveDiagnosis
+);
 
-// Prescription routes — all backed by prescriptionPdfModel via pdfController.js
+// Prescription routes
 doctorRouter.post("/save-prescription", doctorAuth, savePrescription);
-doctorRouter.get("/prescription-details/:prescriptionId", doctorAuth, getCombinedPrescriptionDetails);
-doctorRouter.get("/patient-prescriptions/:patientCustomId", doctorAuth, getPrescriptionsByPatientId);
+doctorRouter.get(
+  "/prescription-details/:prescriptionId",
+  doctorAuth,
+  getCombinedPrescriptionDetails
+);
+doctorRouter.get(
+  "/patient-prescriptions/:patientCustomId",
+  doctorAuth,
+  getPrescriptionsByPatientId
+);
 
 doctorRouter.get("/doctor-data", doctorAuth, getDoctorData);
 
