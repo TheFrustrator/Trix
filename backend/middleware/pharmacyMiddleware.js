@@ -2,8 +2,15 @@ import jwt from "jsonwebtoken";
 
 const pharmacyAuth = async (req, res, next) => {
   try {
-    const { token } = req.cookies;
+    let token = req.cookies?.token;
 
+    // 1. Extract Bearer token from Authorization header (localStorage)
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    }
+
+    // 2. Reject if no token is present
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -11,6 +18,7 @@ const pharmacyAuth = async (req, res, next) => {
       });
     }
 
+    // 3. Verify token
     const tokenDecode = jwt.verify(token, process.env.JWT_SECRET);
 
     if (!tokenDecode.id) {
@@ -20,8 +28,9 @@ const pharmacyAuth = async (req, res, next) => {
       });
     }
 
-    // Attach to request object
+    // 4. Attach decoded IDs to request object
     req.pharmacyId = tokenDecode.id;
+    req.userId = tokenDecode.id; // Secondary alias for controllers checking req.userId
 
     next();
   } catch (error) {
