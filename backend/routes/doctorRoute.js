@@ -35,7 +35,7 @@ doctorRouter.post(
 );
 doctorRouter.post("/doctor-login", doctorlogin);
 doctorRouter.post("/logout", doctorlogout);
-doctorRouter.post("/send-verify-otp", doctorAuth, sendVerifyOtp);
+doctorRouter.post("/doc", doctorAuth, sendVerifyOtp);
 doctorRouter.post("/verify-account", doctorAuth, verifyEmail);
 doctorRouter.get("/is-auth", doctorAuth, isAuthenticated);
 doctorRouter.post("/send-reset-otp", sendResetOtp);

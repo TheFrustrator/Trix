@@ -7,7 +7,7 @@ import pharmacyModel from "../models/pharmacyModel.js";
 import doctorModel from "../models/doctorModel.js";
 import transporter from "../config/nodemailer.js";
 
-// Helper function to safely find pharmacy by ObjectId OR custom string pharmacyId
+// Helper function to safely find pharmacy by Mongo ObjectId OR custom pharmacyId string
 const findPharmacyById = async (id) => {
   if (!id) return null;
 
@@ -39,7 +39,15 @@ export const pharmacyRegister = async (req, res) => {
     });
   }
 
-  const uploadLicense = req.file ? req.file.path : null;
+  // Handle license upload safely for memoryStorage (Base64) or diskStorage (path)
+  let uploadLicense = null;
+  if (req.file) {
+    if (req.file.buffer) {
+      uploadLicense = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+    } else {
+      uploadLicense = req.file.path || req.file.filename || null;
+    }
+  }
 
   try {
     const existingPharmacy = await pharmacyModel.findOne({ email });

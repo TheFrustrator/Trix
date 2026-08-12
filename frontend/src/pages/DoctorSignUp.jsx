@@ -22,30 +22,17 @@ const DoctorSignUp = () => {
 
   const [loading, setLoading] = useState(false);
 
-  const [uploadLicense, setUploadLicense] = useState("");
+  // Store raw File object for FormData compatibility
+  const [uploadLicense, setUploadLicense] = useState(null);
   const [licenseFileName, setLicenseFileName] = useState("");
 
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  const convertFileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
-  const processSelectedFile = async (file) => {
+  const processSelectedFile = (file) => {
     if (!file) return;
-    try {
-      const base64String = await convertFileToBase64(file);
-      setUploadLicense(base64String);
-      setLicenseFileName(file.name);
-    } catch (error) {
-      toast.error("Failed to read file. Please try again.");
-    }
+    setUploadLicense(file);
+    setLicenseFileName(file.name);
   };
 
   const handleDragOver = (e) => {
@@ -57,17 +44,17 @@ const DoctorSignUp = () => {
     setIsDragging(false);
   };
 
-  const handleDrop = async (e) => {
+  const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      await processSelectedFile(e.dataTransfer.files[0]);
+      processSelectedFile(e.dataTransfer.files[0]);
     }
   };
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      await processSelectedFile(e.target.files[0]);
+      processSelectedFile(e.target.files[0]);
     }
   };
 
@@ -90,18 +77,20 @@ const DoctorSignUp = () => {
         ? backendUrl.slice(0, -1)
         : backendUrl;
 
+      // Construct FormData payload for Multer
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("email", email);
+      formData.append("phoneNumber", phoneNumber);
+      formData.append("password", password);
+      formData.append("clinicAdd", ClinicAdd);
+      formData.append("Specialization", Specialization);
+      formData.append("uploadLicense", uploadLicense);
+
       // Step 1: Register doctor
       const { data: regData } = await axios.post(
         `${baseUrl}/api/doctor/doctor-signup`,
-        {
-          name,
-          email,
-          phoneNumber,
-          password,
-          clinicAdd: ClinicAdd,
-          Specialization,
-          uploadLicense,
-        }
+        formData
       );
 
       if (!regData.success) {
@@ -109,12 +98,24 @@ const DoctorSignUp = () => {
         return toast.error(regData.message || "Registration failed");
       }
 
-      // Step 2: Store token locally & refresh doctor session
-      await doctorLoginSuccess(regData.token);
+      // Step 2: Store token locally
+      const token = regData.token;
+      if (token) {
+        localStorage.setItem("token", token);
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      }
 
-      // Step 3: Request verification OTP
+      await doctorLoginSuccess(token);
+
+      // Step 3: Request verification OTP with explicit headers
       const { data: otpData } = await axios.post(
-        `${baseUrl}/api/doctor/send-verify-otp`
+        `${baseUrl}/api/doctor/send-verify-otp`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       if (otpData.success) {

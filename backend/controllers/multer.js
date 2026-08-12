@@ -1,6 +1,6 @@
 import multer from "multer";
 
-// Use memoryStorage so files are stored as Buffers in memory without creating local files
+// Use memoryStorage so uploaded files are held in memory buffers without writing to disk
 const storage = multer.memoryStorage();
 
 // File filter (restrict to JPEG, PNG, JPG images and PDFs)

@@ -1,11 +1,25 @@
 import doctorModel from "../models/doctorModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import transporter from "../config/nodemailer.js";
 import accessRequestModel from "../models/accessRequestModel.js";
 import userModel from "../models/userModel.js";
 import diagnosisModel from "../models/diagnosisModel.js";
 import recentPatientModel from "../models/recentPatientModel.js";
+
+// Helper function to find doctor by ObjectId OR custom string docId
+const findDoctorById = async (id) => {
+  if (!id) return null;
+
+  const conditions = [{ docId: id }];
+
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    conditions.push({ _id: id });
+  }
+
+  return await doctorModel.findOne({ $or: conditions });
+};
 
 export const doctorRegister = async (req, res) => {
   const { name, email, password, phoneNumber, clinicAdd, Specialization } =
@@ -15,7 +29,15 @@ export const doctorRegister = async (req, res) => {
     return res.json({ success: false, message: "Missing Details" });
   }
 
-  const uploadLicense = req.file ? req.file.path : null;
+  // Handle file in memory (Base64) or file path
+  let uploadLicense = null;
+  if (req.file) {
+    if (req.file.buffer) {
+      uploadLicense = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+    } else {
+      uploadLicense = req.file.path || req.file.filename || null;
+    }
+  }
 
   try {
     const existingDoctor = await doctorModel.findOne({ email });
@@ -46,7 +68,7 @@ export const doctorRegister = async (req, res) => {
     });
     await doctor.save();
 
-    const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: doctor._id.toString() }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
 
@@ -69,6 +91,7 @@ export const doctorRegister = async (req, res) => {
     return res.json({
       success: true,
       token,
+      docId: doctor._id,
       message: "Doctor registered successfully",
     });
   } catch (error) {
@@ -102,7 +125,8 @@ export const doctorlogin = async (req, res) => {
     if (!isMatch) {
       return res.json({ success: false, message: "Invalid credentials" });
     }
-    const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, {
+
+    const token = jwt.sign({ id: doctor._id.toString() }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
 
@@ -113,7 +137,7 @@ export const doctorlogin = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return res.json({ success: true, token });
+    return res.json({ success: true, token, docId: doctor._id });
   } catch (error) {
     return res.json({ success: false, message: error.message });
   }
@@ -135,13 +159,13 @@ export const doctorlogout = async (req, res) => {
 
 export const sendVerifyOtp = async (req, res) => {
   try {
-    const docId = req.docId || req.body?.docId;
+    const docId = req.docId || req.doctorId || req.userId || req.body?.docId;
 
     if (!docId) {
       return res.json({ success: false, message: "User ID is required" });
     }
 
-    const doctor = await doctorModel.findById(docId);
+    const doctor = await findDoctorById(docId);
 
     if (!doctor) {
       return res.json({ success: false, message: "User not found" });
@@ -177,7 +201,7 @@ export const sendVerifyOtp = async (req, res) => {
 };
 
 export const verifyEmail = async (req, res) => {
-  const docId = req.docId || req.body?.docId;
+  const docId = req.docId || req.doctorId || req.userId || req.body?.docId;
   const { otp } = req.body;
 
   if (!docId || !otp) {
@@ -185,7 +209,8 @@ export const verifyEmail = async (req, res) => {
   }
 
   try {
-    const doctor = await doctorModel.findById(docId);
+    const doctor = await findDoctorById(docId);
+
     if (!doctor) {
       return res.json({ success: false, message: "User not found" });
     }
@@ -300,10 +325,10 @@ export const resetPassword = async (req, res) => {
 
 export const createAccessRequest = async (req, res) => {
   try {
-    const docId = req.docId || req.body?.docId;
+    const docId = req.docId || req.doctorId || req.userId || req.body?.docId;
     const { patientCustomId } = req.body;
 
-    if (!docId || typeof docId !== "string") {
+    if (!docId) {
       return res
         .status(401)
         .json({ success: false, message: "Unauthorized Doctor Account" });
@@ -399,7 +424,7 @@ export const createAccessRequest = async (req, res) => {
 
 export const cancelAccessRequest = async (req, res) => {
   try {
-    const docId = req.docId || req.body?.docId;
+    const docId = req.docId || req.doctorId || req.userId || req.body?.docId;
     const { requestId } = req.body;
 
     if (!requestId || typeof requestId !== "string") {
@@ -465,14 +490,14 @@ export const checkAccessRequestStatus = async (req, res) => {
 
 export const getDoctorData = async (req, res) => {
   try {
-    const doctorId = req.docId || req.body?.docId;
-    const doctor = await doctorModel.findById(doctorId);
+    const doctorId = req.docId || req.doctorId || req.userId || req.body?.docId;
+    const doctor = await findDoctorById(doctorId);
 
     if (!doctor) {
       return res.json({ success: false, message: "User not found" });
     }
 
-    res.json({
+    return res.json({
       success: true,
       userData: {
         name: doctor.name,
@@ -485,13 +510,13 @@ export const getDoctorData = async (req, res) => {
       },
     });
   } catch (error) {
-    res.json({ success: false, message: error.message });
+    return res.json({ success: false, message: error.message });
   }
 };
 
 export const saveDiagnosis = async (req, res) => {
   try {
-    const doctorId = req.doctorId || req.userId;
+    const doctorId = req.docId || req.doctorId || req.userId;
     const { patientCustomId, diagnosis, notes, date } = req.body;
 
     if (!doctorId) {
@@ -508,11 +533,10 @@ export const saveDiagnosis = async (req, res) => {
       });
     }
 
-    // Process report file if uploaded via Multer
+    // Process report file safely if attached
     let reportUrl = "";
     if (req.file) {
       if (req.file.buffer) {
-        // If using memory storage for Multer
         reportUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
       } else {
         reportUrl = req.file.path || req.file.filename || "";
@@ -546,7 +570,7 @@ export const saveDiagnosis = async (req, res) => {
 
 export const getActiveSessionDetails = async (req, res) => {
   try {
-    const docId = req.docId || req.body?.docId;
+    const docId = req.docId || req.doctorId || req.userId || req.body?.docId;
     const { patientCustomId } = req.params;
 
     const activeSession = await accessRequestModel.findOne({
@@ -651,7 +675,7 @@ export const recordRecentPatientVisit = async (
   patientId,
   patientCustomId,
   patientName,
-  disease,
+  disease
 ) => {
   try {
     await recentPatientModel.findOneAndUpdate(
@@ -662,7 +686,7 @@ export const recordRecentPatientVisit = async (
         disease: disease || "General Consultation",
         lastVisitDate: new Date(),
       },
-      { upsert: true, returnDocument: "after" },
+      { upsert: true, returnDocument: "after" }
     );
   } catch (error) {
     console.error("Error recording recent patient:", error);
@@ -671,7 +695,7 @@ export const recordRecentPatientVisit = async (
 
 export const getRecentPatients = async (req, res) => {
   try {
-    const docId = req.docId || req.body?.docId;
+    const docId = req.docId || req.doctorId || req.userId || req.body?.docId;
 
     if (!docId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -707,7 +731,7 @@ export const getRecentPatients = async (req, res) => {
 
 export const getCurrentActiveSession = async (req, res) => {
   try {
-    const docId = req.docId || req.body?.docId;
+    const docId = req.docId || req.doctorId || req.userId || req.body?.docId;
 
     if (!docId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });

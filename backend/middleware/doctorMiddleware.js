@@ -19,8 +19,9 @@ const doctorAuth = (req, res, next) => {
 
     const tokenDecode = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (tokenDecode.id) {
+    if (tokenDecode && tokenDecode.id) {
       req.doctorId = tokenDecode.id;
+      req.docId = tokenDecode.id;
       req.userId = tokenDecode.id;
       next();
     } else {
