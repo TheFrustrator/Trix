@@ -44,25 +44,11 @@ The platform is built around a consent-based workflow: patients can receive and 
 
 ## 🏥 Problem Statement
 
-Medical information is often fragmented across hospitals, clinics, doctors, and pharmacies. Patients may have to repeatedly explain their medical history, while healthcare providers may not have a convenient way to access relevant records during a consultation.
-
-MediLink addresses this problem by providing a centralized digital health record workflow built around a unique Patient ID and controlled access between patients and healthcare providers.
-
-The project focuses on:
-
-- Centralizing patient medical information
-- Simplifying doctor-patient record sharing
-- Managing doctor access requests
-- Maintaining prescription information digitally
-- Supporting prescription PDF generation and viewing
-- Providing separate workflows for patients, doctors, and pharmacies
-- Supporting real-time communication for access-related events
+Patient medical history is fragmented across hospitals, clinics, and pharmacies. Patients repeat their history verbally at every visit, carry physical prescriptions, and have no reliable way to track their diagnosis timeline. Pharmacies have no trustworthy way to verify whether a prescription is genuine or current. There is no unified, patient-controlled, consent-based system that lets a patient own their data while granting temporary, revocable access to healthcare providers.
 
 ---
 
 ## 💡 Solution Overview
-
-MediLink uses a **React + Vite frontend** and a **Node.js + Express backend** connected to **MongoDB through Mongoose**.
 
 The application is divided into three main user experiences:
 
