@@ -6,8 +6,6 @@ MediLink is a full-stack digital health record platform designed to connect **Pa
 
 The platform is built around a consent-based workflow: patients can receive and manage access requests from doctors, doctors can work with patient records and prescriptions, and pharmacies can access prescription-related information through dedicated workflows.
 
-> Built as a hackathon project for the **AI in Healthcare** track.
-
 ---
 
 ## 📖 Table of Contents
@@ -1123,7 +1121,7 @@ The repository currently uses an **ISC** license declaration in the backend pack
 https://github.com/TheFrustrator/Trix
 
 **Live application listed by the repository:**  
-https://trix-orpin.vercel.app/
+[https://trix-orpin.vercel.app/](https://trix-pied.vercel.app/)
 
 ---
 
