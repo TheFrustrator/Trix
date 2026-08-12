@@ -1085,28 +1085,6 @@ Potential improvements include:
 |---|---|
 | **Sudip Bhunia** | Development / Project Implementation |
 | **Souvik Das** | Testing, Deployment and Security Standards |
-
-Additional contributors can be added here as the project evolves.
-
----
-
-## 📌 Project Status
-
-MediLink is a hackathon-oriented full-stack healthcare application currently implemented with:
-
-- React + Vite frontend
-- Node.js + Express backend
-- MongoDB + Mongoose
-- JWT authentication
-- bcrypt password hashing
-- Socket.IO real-time communication
-- Doctor/patient access requests
-- Diagnosis and prescription management
-- PDF and QR-code functionality
-- Email OTP workflows
-
-The current repository should be considered a **hackathon/project implementation rather than a certified production healthcare system**.
-
 ---
 
 ## 📄 License
