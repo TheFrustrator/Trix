@@ -68,7 +68,7 @@ const ForgetPassword = () => {
       }
     } catch (error) {
       toast.error(
-        error.response?.data?.message || error.message || "Failed to send OTP."
+        error.response?.data?.message || error.message || "Failed to send OTP.",
       );
     } finally {
       setLoading(false);
@@ -110,7 +110,7 @@ const ForgetPassword = () => {
       toast.error(
         error.response?.data?.message ||
           error.message ||
-          "Something went wrong."
+          "Something went wrong.",
       );
     } finally {
       setLoading(false);
@@ -127,7 +127,8 @@ const ForgetPassword = () => {
         >
           <h1 className="text-2xl font-bold mb-2">Reset Password</h1>
           <p className="text-sm text-gray-500 text-center mb-6">
-            Enter your registered email address to receive a password reset code.
+            Enter your registered email address to receive a password reset
+            code.
           </p>
 
           <div className="w-full mb-4">
@@ -158,7 +159,9 @@ const ForgetPassword = () => {
         >
           <h1 className="text-2xl font-bold mb-2">New Password</h1>
           <p className="text-sm text-gray-500 text-center mb-6">
-            Enter the 6-digit OTP sent to <span className="font-semibold">{email}</span> and set a new password.
+            Enter the 6-digit OTP sent to{" "}
+            <span className="font-semibold">{email}</span> and set a new
+            password.
           </p>
 
           {/* OTP Box Inputs */}

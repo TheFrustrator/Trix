@@ -25,7 +25,7 @@ const PharmacyLogin = () => {
 
       const { data } = await axios.post(
         `${baseUrl}/api/pharmacy/pharmacy-login`,
-        { email, password }
+        { email, password },
       );
 
       if (data.success) {
@@ -59,6 +59,8 @@ const PharmacyLogin = () => {
         password={password}
         setPassword={setPassword}
         onSubmitHandler={onSubmitHandler}
+        resetPassword="/reset-password-pharmacy"
+        // signupPage="/pharmacy-signup"
       />
     </div>
   );

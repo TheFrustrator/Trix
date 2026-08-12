@@ -31,6 +31,7 @@ import PharmacyEmailVerify from "./pages/PharmacyEmailVerify";
 import PharmacyForgetPassword from "./pages/PharmacyForgetPassword";
 import PharmacyProtectedRoute from "./component/PharmacyProtectedRoute";
 import PrescriptionPDF from "./component/PrescriptionPDF";
+import DoctorResetPassword from "./pages/DoctorResetPassword";
 
 const App = () => {
   return (
@@ -112,7 +113,10 @@ const App = () => {
         {/* Verification & Auth */}
         <Route path="/email-verify" element={<EmailVerify />} />
         <Route path="/patient-email-verify" element={<PatientEmailVerify />} />
-        <Route path="/reset-password" element={<ForgetPassword />} />
+        <Route path="/reset-password-patient" element={<ForgetPassword />} />
+        <Route path="/reset-password-pharmacy" element={<PharmacyForgetPassword />} />
+        <Route path="/reset-password-doctor" element={<DoctorResetPassword />} />
+
       </Routes>
     </div>
   );

@@ -59,6 +59,7 @@ const PatientLogin = () => {
         password={password}
         setPassword={setPassword}
         onSubmitHandler={onSubmitHandler}
+        resetPassword="/reset-password-patient"
       />
     </div>
   );

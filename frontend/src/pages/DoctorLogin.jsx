@@ -66,6 +66,7 @@ const DoctorLogin = () => {
         password={password}
         setPassword={setPassword}
         onSubmitHandler={onSubmitHandler}
+         resetPassword="/reset-password-doctor"
       />
     </div>
   );
