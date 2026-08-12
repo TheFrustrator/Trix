@@ -7,7 +7,7 @@ import pharmacyModel from "../models/pharmacyModel.js";
 import doctorModel from "../models/doctorModel.js";
 import transporter from "../config/nodemailer.js";
 
-// Helper function to query both Mongo _id and custom pharmacyId safely
+// Helper function to safely find pharmacy by ObjectId OR custom string pharmacyId
 const findPharmacyById = async (id) => {
   if (!id) return null;
 
@@ -75,9 +75,11 @@ export const pharmacyRegister = async (req, res) => {
 
     await pharmacy.save();
 
-    const token = jwt.sign({ id: pharmacy._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign(
+      { id: pharmacy._id.toString() },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -96,6 +98,7 @@ export const pharmacyRegister = async (req, res) => {
     return res.json({
       success: true,
       token,
+      pharmacyId: pharmacy._id,
       message: "Pharmacy registered successfully",
     });
   } catch (error) {
@@ -143,9 +146,11 @@ export const pharmacyLogin = async (req, res) => {
       });
     }
 
-    const token = jwt.sign({ id: pharmacy._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign(
+      { id: pharmacy._id.toString() },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -157,6 +162,7 @@ export const pharmacyLogin = async (req, res) => {
     return res.json({
       success: true,
       token,
+      pharmacyId: pharmacy._id,
     });
   } catch (error) {
     return res.json({
@@ -195,7 +201,7 @@ export const sendVerifyOtp = async (req, res) => {
     if (!pharmacyId) {
       return res.status(401).json({
         success: false,
-        message: "Pharmacy ID is required",
+        message: "User ID is required",
       });
     }
 

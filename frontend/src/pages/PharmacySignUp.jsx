@@ -74,7 +74,7 @@ const PharmacySignUp = () => {
         ? backendUrl.slice(0, -1)
         : backendUrl;
 
-      // Construct FormData
+      // Construct FormData for Multer middleware compatibility
       const formData = new FormData();
       formData.append("shopName", shopName);
       formData.append("ownerName", ownerName);
@@ -95,8 +95,10 @@ const PharmacySignUp = () => {
         return toast.error(regData.message || "Registration failed");
       }
 
-      // Step 2: Store token in localStorage and set axios global header
+      // Step 2: Store token in localStorage & set global defaults
       const authToken = regData.token;
+      const registeredPharmacyId = regData.pharmacyId;
+
       if (authToken) {
         localStorage.setItem("token", authToken);
         axios.defaults.headers.common["Authorization"] = `Bearer ${authToken}`;
@@ -104,10 +106,10 @@ const PharmacySignUp = () => {
 
       await pharmacyLoginSuccess(authToken);
 
-      // Step 3: Request verification OTP with EXPLICIT Authorization header
+      // Step 3: Request verification OTP passing pharmacyId in body & header
       const { data: otpData } = await axios.post(
         `${baseUrl}/api/pharmacy/send-verify-otp`,
-        {},
+        { pharmacyId: registeredPharmacyId },
         {
           headers: {
             Authorization: `Bearer ${authToken}`,

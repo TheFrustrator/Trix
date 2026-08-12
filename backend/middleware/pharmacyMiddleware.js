@@ -13,7 +13,7 @@ const pharmacyAuth = async (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: "Not authorized. No token provided.",
+        message: "Not authorized. Token is missing.",
       });
     }
 
@@ -26,7 +26,7 @@ const pharmacyAuth = async (req, res, next) => {
       });
     }
 
-    // Attach to request
+    // Attach decoded ID to both req properties
     req.pharmacyId = tokenDecode.id;
     req.userId = tokenDecode.id;
 
